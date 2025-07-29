@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import ProductCard from './ProductCard';
+import ProductEditModal from './ProductEditModal';
 import './AdminDashboard.css';
 
 /**
@@ -17,6 +19,8 @@ export default function AdminDashboard() {
     const [selectedFile, setSelectedFile] = useState(null);
     const [uploadStatus, setUploadStatus] = useState('');
     const [previewUrl, setPreviewUrl] = useState('');
+    const [isEditing, setIsEditing] = useState(false);
+    const [editingProduct, setEditingProduct] = useState(null);
     const [productForm, setProductForm] = useState({
         name: '',
         description: '',
@@ -24,8 +28,6 @@ export default function AdminDashboard() {
         imageUrl: '',
         inStock: true
     });
-    const [isEditing, setIsEditing] = useState(false);
-    const [editingProduct, setEditingProduct] = useState(null);
 
     useEffect(() => {
         fetchDashboardData();
@@ -211,9 +213,9 @@ export default function AdminDashboard() {
     };
 
     /**
- * Ouvre le modal d'édition pour un produit spécifique
- * @param {Object} product - Le produit à éditer
- */
+     * Ouvre le modal d'édition pour un produit spécifique
+     * @param {Object} product - Le produit à éditer
+     */
     const handleEditClick = (product) => {
         setEditingProduct({ ...product });
         setIsEditing(true);
@@ -231,50 +233,29 @@ export default function AdminDashboard() {
      * Gère les changements de champs dans le formulaire d'édition
      * @param {Event} e - L'événement de changement
      */
-    const handleEditInputChange = (e) => {
-        const { name, value, type, checked } = e.target;
-        setEditingProduct({
-            ...editingProduct,
-            [name]: type === 'checkbox' ? checked : value
-        });
-    };
-
-    /**
-     * Soumet les modifications d'un produit au serveur
-     * @param {Event} e - L'événement de soumission du formulaire
-     */
-    const handleUpdateProduct = async (e) => {
-        e.preventDefault();
-
-        if (!editingProduct.name || !editingProduct.price) {
-            setError('Nom et prix sont obligatoires');
-            return;
-        }
-
+    const handleSaveEdit = async (updatedProduct) => {
         setLoading(true);
         try {
             const token = localStorage.getItem('adminToken');
-            const response = await fetch(`/api/products/${editingProduct._id}`, {
+            const response = await fetch(`/api/products/${updatedProduct._id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify(editingProduct)
+                body: JSON.stringify(updatedProduct)
             });
 
             if (!response.ok) {
                 throw new Error('Erreur lors de la mise à jour du produit');
             }
 
-            const updatedProduct = await response.json();
+            const data = await response.json();
 
-            // Update the products list with the edited product
             setProducts(products.map(p =>
-                p._id === updatedProduct._id ? updatedProduct : p
+                p._id === data._id ? data : p
             ));
 
-            // Close the edit modal
             setIsEditing(false);
             setEditingProduct(null);
 
@@ -308,10 +289,10 @@ export default function AdminDashboard() {
                 throw new Error('Erreur lors de la suppression du produit');
             }
 
-            // Remove the deleted product from the list
+            // Enlever le produit de la liste
             setProducts(products.filter(p => p._id !== productId));
 
-            // If we're editing this product, close the modal
+            // Si le produit en cours d'édition est supprimé, fermer le modal d'édition
             if (editingProduct && editingProduct._id === productId) {
                 setIsEditing(false);
                 setEditingProduct(null);
@@ -443,30 +424,13 @@ export default function AdminDashboard() {
                 <h3>Produits ({products.length})</h3>
                 <div className="products-grid">
                     {products.map(product => (
-                        <div key={product._id} className="product-card">
-                            {product.imageUrl && (
-                                <img src={product.imageUrl} alt={product.name} />
-                            )}
-                            <h4>{product.name}</h4>
-                            <p className="price">{product.price.toFixed(2)} $</p>
-                            <p className="stock">
-                                {product.inStock ? 'En stock' : 'Rupture de stock'}
-                            </p>
-                            <div className="product-actions">
-                                <button
-                                    onClick={() => handleEditClick(product)}
-                                    className="edit-button"
-                                >
-                                    Modifier
-                                </button>
-                                <button
-                                    onClick={() => handleDeleteProduct(product._id)}
-                                    className="delete-button"
-                                >
-                                    Supprimer
-                                </button>
-                            </div>
-                        </div>
+                        <ProductCard
+                            key={product._id}
+                            product={product}
+                            onEdit={handleEditClick}
+                            onDelete={handleDeleteProduct}
+                            isAdmin={true}
+                        />
                     ))}
                 </div>
             </section>
@@ -475,92 +439,14 @@ export default function AdminDashboard() {
                 Se déconnecter
             </button>
 
+            {/* Modal d'édition de produit */}
             {isEditing && editingProduct && (
-                <div className="modal-overlay">
-                    <div className="edit-modal">
-                        <h3>Modifier le Produit</h3>
-
-                        <form onSubmit={handleUpdateProduct} className="edit-form">
-                            <div className="form-group">
-                                <label htmlFor="edit-name">Nom du produit*</label>
-                                <input
-                                    type="text"
-                                    id="edit-name"
-                                    name="name"
-                                    value={editingProduct.name}
-                                    onChange={handleEditInputChange}
-                                    required
-                                />
-                            </div>
-
-                            <div className="form-group">
-                                <label htmlFor="edit-description">Description</label>
-                                <textarea
-                                    id="edit-description"
-                                    name="description"
-                                    value={editingProduct.description || ''}
-                                    onChange={handleEditInputChange}
-                                />
-                            </div>
-
-                            <div className="form-group">
-                                <label htmlFor="edit-price">Prix*</label>
-                                <input
-                                    type="number"
-                                    id="edit-price"
-                                    name="price"
-                                    min="0"
-                                    step="0.01"
-                                    value={editingProduct.price}
-                                    onChange={handleEditInputChange}
-                                    required
-                                />
-                            </div>
-
-                            <div className="form-group">
-                                <label htmlFor="edit-imageUrl">URL de l'image</label>
-                                <input
-                                    type="text"
-                                    id="edit-imageUrl"
-                                    name="imageUrl"
-                                    value={editingProduct.imageUrl || ''}
-                                    onChange={handleEditInputChange}
-                                />
-                                {editingProduct.imageUrl && (
-                                    <div className="image-preview">
-                                        <img src={editingProduct.imageUrl} alt="Aperçu" width="100" />
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="form-group checkbox">
-                                <label>
-                                    <input
-                                        type="checkbox"
-                                        name="inStock"
-                                        checked={editingProduct.inStock}
-                                        onChange={handleEditInputChange}
-                                    />
-                                    En stock
-                                </label>
-                            </div>
-
-                            <div className="modal-actions">
-                                <button type="submit" disabled={loading} className="save-button">
-                                    {loading ? 'Sauvegarde...' : 'Sauvegarder'}
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={handleCancelEdit}
-                                    className="cancel-button"
-                                    disabled={loading}
-                                >
-                                    Annuler
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
+                <ProductEditModal
+                    product={editingProduct}
+                    onSave={handleSaveEdit}
+                    onCancel={handleCancelEdit}
+                    loading={loading}
+                />
             )}
         </div>
     );
