@@ -1,25 +1,15 @@
 const express = require('express');
 const router = express.Router();
-const Product = require('../models/Product');
+const productController = require('../controllers/productController');
+const { authenticateToken } = require('../middleware/auth');
 
-// GET tous les produits
-router.get('/', async (req, res) => {
-  try {
-    const products = await Product.find();
-    res.json(products);
-  } catch (err) {
-    res.status(500).json({ error: 'Erreur serveur' });
-  }
-});
+// Routes publiques
+router.get('/', productController.getAllProducts);
+router.get('/:id', productController.getProductById);
 
-router.post('/', async (req, res) => {
-  try {
-    const newProduct = new Product(req.body);
-    const saved = await newProduct.save();
-    res.status(201).json(saved);
-  } catch (err) {
-    res.status(400).json({ error: 'Erreur lors de la création du produit' });
-  }
-});
+// Routes protégées
+router.post('/', authenticateToken, productController.createProduct);
+router.put('/:id', authenticateToken, productController.updateProduct);
+router.delete('/:id', authenticateToken, productController.deleteProduct);
 
 module.exports = router;

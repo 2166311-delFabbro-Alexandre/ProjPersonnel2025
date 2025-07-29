@@ -1,41 +1,24 @@
 const express = require("express");
-const jwt = require("jsonwebtoken");
 const router = express.Router();
 const { authenticateToken } = require("../middleware/auth");
+const adminController = require("../controllers/adminController");
 
-const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "admin";
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "1234";
-const JWT_SECRET = process.env.JWT_SECRET || "default_secret_key";
+/**
+ * Route de connexion administrateur
+ * Génère un token JWT si les identifiants sont valides
+ */
+router.post("/login", adminController.login);
 
-router.post("/login", (req, res) => {
-  const { username, password } = req.body;
+/**
+ * Route du tableau de bord administrateur
+ * Protégée - Nécessite un token JWT valide
+ */
+router.get("/dashboard", authenticateToken, adminController.getDashboardData);
 
-  if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-
-    const token = jwt.sign(
-      { username, role: "admin" },
-      JWT_SECRET,
-      { expiresIn: "1h" }
-    );
-
-    res.status(200).json({
-      success: true,
-      token,
-      message: "Connexion réussie"
-    });
-  } else {
-    res.status(401).json({
-      success: false,
-      message: "Nom d'utilisateur ou mot de passe invalide"
-    });
-  }
-});
-
-router.get("/dashboard", authenticateToken, (req, res) => {
-  res.json({
-    message: "Accès autorisé au tableau de bord admin",
-    user: req.user
-  });
-});
+/**
+ * Route des statistiques administrateur
+ * Protégée - Nécessite un token JWT valide
+ */
+router.get("/stats", authenticateToken, adminController.getStats);
 
 module.exports = router;
