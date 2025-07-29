@@ -1,4 +1,5 @@
 import React from 'react';
+import { useCart } from '../context/CartContext';
 import './ProductCard.css';
 
 /**
@@ -11,6 +12,28 @@ import './ProductCard.css';
  * @returns {JSX.Element} - Carte de produit
  */
 export default function ProductCard({ product, onEdit, onDelete, isAdmin = false }) {
+    const { addToCart } = useCart();
+
+    const handleAddToCart = () => {
+        addToCart(product);
+
+        // Optional: Show a temporary notification
+        const notification = document.createElement('div');
+        notification.className = 'add-to-cart-notification';
+        notification.textContent = 'Produit ajouté au panier!';
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            notification.classList.add('show');
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 2000);
+        }, 10);
+    };
+
     return (
         <div className="product-card">
             {product.imageUrl && (
@@ -22,7 +45,7 @@ export default function ProductCard({ product, onEdit, onDelete, isAdmin = false
                 {product.inStock ? 'En stock' : 'Rupture de stock'}
             </p>
 
-            {isAdmin && (
+            {isAdmin ? (
                 <div className="product-actions">
                     <button
                         onClick={() => onEdit(product)}
@@ -37,6 +60,14 @@ export default function ProductCard({ product, onEdit, onDelete, isAdmin = false
                         Supprimer
                     </button>
                 </div>
+            ) : (
+                <button
+                    onClick={handleAddToCart}
+                    className="add-to-cart-button"
+                    disabled={!product.inStock}
+                >
+                    {product.inStock ? 'Ajouter au panier' : 'Indisponible'}
+                </button>
             )}
         </div>
     );
