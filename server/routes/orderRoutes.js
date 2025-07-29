@@ -8,9 +8,6 @@ router.post('/', orderController.createOrder);
 
 // Admin routes
 router.get('/', authenticateToken, orderController.getAllOrders);
-
-router.get('/test', (req, res) => {
-    res.json({ message: 'Order API is working' });
-});
+router.put('/:id/status', authenticateToken, orderController.updateOrderStatus);
 
 module.exports = router;

@@ -115,3 +115,30 @@ button:disabled {
   background-color: #ffebee;
   border-radius: 4px;
 }
+
+.admin-tabs {
+  display: flex;
+  border-bottom: 2px solid #ddd;
+  margin-bottom: 20px;
+}
+
+.tab-button {
+  padding: 10px 20px;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  margin-right: 10px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  color: #666;
+}
+
+.tab-button:hover {
+  color: #3498db;
+}
+
+.tab-button.active {
+  color: #3498db;
+  border-bottom-color: #3498db;
+}

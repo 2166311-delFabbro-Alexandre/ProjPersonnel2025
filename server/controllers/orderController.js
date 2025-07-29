@@ -86,6 +86,47 @@ exports.getAllOrders = async (req, res) => {
 };
 
 /**
+ * Update order status
+ */
+exports.updateOrderStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+
+    // Validate status
+    const validStatuses = ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Statut invalide'
+      });
+    }
+
+    const updatedOrder = await Order.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true } // Return the updated document
+    );
+
+    if (!updatedOrder) {
+      return res.status(404).json({
+        success: false,
+        message: 'Commande non trouvée'
+      });
+    }
+
+    res.json(updatedOrder);
+
+  } catch (error) {
+    console.error('Error updating order status:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la mise à jour du statut de la commande',
+      error: error.message
+    });
+  }
+};
+
+/**
  * Helper function to send order confirmation email
  */
 async function sendOrderConfirmationEmail(order) {

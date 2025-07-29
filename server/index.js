@@ -7,6 +7,8 @@ const productRoutes = require('./routes/productRoutes');
 const uploadRoutes = require('./routes/upload');
 const adminRoutes = require('./routes/adminRoutes');
 const orderRoutes = require('./routes/orderRoutes');
+const pageContentRoutes = require('./routes/pageContentRoutes');
+const portfolioRoutes = require('./routes/portfolioRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -23,6 +25,8 @@ app.use('/api/products', productRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/page-content', pageContentRoutes);
+app.use('/api/portfolio', portfolioRoutes);
 
 // MongoDB connection
 mongoose.connect(process.env.MONGO_URI)

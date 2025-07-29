@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import ProductCard from './ProductCard';
 import ProductEditModal from './ProductEditModal';
+import AdminOrders from './AdminOrders';
+import AdminContentEditor from './AdminContentEditor';
+import AdminPortfolio from './AdminPortfolio';
 import './AdminDashboard.css';
 
 /**
@@ -14,6 +17,7 @@ export default function AdminDashboard() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const { logout } = useAuth();
+    const [activeTab, setActiveTab] = useState('products');
 
     const [products, setProducts] = useState([]);
     const [selectedFile, setSelectedFile] = useState(null);
@@ -319,121 +323,157 @@ export default function AdminDashboard() {
                 </div>
             )}
 
-            {/* Section de téléchargement d'image */}
-            <section className="upload-section">
-                <h3>Télécharger une Image</h3>
-                <form onSubmit={handleUpload} className="upload-form">
-                    <div className="form-group">
-                        <label htmlFor="image">Sélectionner une image</label>
-                        <input
-                            type="file"
-                            id="image"
-                            accept="image/*"
-                            onChange={handleFileChange}
-                            disabled={loading}
-                        />
-                    </div>
+            <div className="admin-tabs">
+                <button
+                    className={`tab-button ${activeTab === 'products' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('products')}
+                >
+                    Produits
+                </button>
+                <button
+                    className={`tab-button ${activeTab === 'orders' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('orders')}
+                >
+                    Commandes
+                </button>
+                <button
+                    className={`tab-button ${activeTab === 'content' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('content')}
+                >
+                    Contenu des Pages
+                </button>
+                <button
+                    className={`tab-button ${activeTab === 'portfolio' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('portfolio')}
+                >
+                    Portfolio
+                </button>
+            </div>
+            {activeTab === 'products' && (
+                <>
+                    {/* Section de téléchargement d'image */}
+                    <section className="upload-section">
+                        <h3>Télécharger une Image</h3>
+                        <form onSubmit={handleUpload} className="upload-form">
+                            <div className="form-group">
+                                <label htmlFor="image">Sélectionner une image</label>
+                                <input
+                                    type="file"
+                                    id="image"
+                                    accept="image/*"
+                                    onChange={handleFileChange}
+                                    disabled={loading}
+                                />
+                            </div>
 
-                    {previewUrl && (
-                        <div className="image-preview">
-                            <img src={previewUrl} alt="Aperçu" width="200" />
+                            {previewUrl && (
+                                <div className="image-preview">
+                                    <img src={previewUrl} alt="Aperçu" width="200" />
+                                </div>
+                            )}
+
+                            <button type="submit" disabled={!selectedFile || loading}>
+                                {loading ? 'Téléchargement...' : 'Télécharger'}
+                            </button>
+
+                            {uploadStatus && <p className="upload-status">{uploadStatus}</p>}
+                        </form>
+                    </section>
+
+                    {/* Formulaire de création de produit */}
+                    <section className="product-form-section">
+                        <h3>Créer un Nouveau Produit</h3>
+                        <form onSubmit={handleCreateProduct} className="product-form">
+                            <div className="form-group">
+                                <label htmlFor="name">Nom du produit*</label>
+                                <input
+                                    type="text"
+                                    id="name"
+                                    name="name"
+                                    value={productForm.name}
+                                    onChange={handleProductInputChange}
+                                    required
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="description">Description</label>
+                                <textarea
+                                    id="description"
+                                    name="description"
+                                    value={productForm.description}
+                                    onChange={handleProductInputChange}
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="price">Prix*</label>
+                                <input
+                                    type="number"
+                                    id="price"
+                                    name="price"
+                                    min="0"
+                                    step="0.01"
+                                    value={productForm.price}
+                                    onChange={handleProductInputChange}
+                                    required
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="imageUrl">URL de l'image</label>
+                                <input
+                                    type="text"
+                                    id="imageUrl"
+                                    name="imageUrl"
+                                    value={productForm.imageUrl}
+                                    onChange={handleProductInputChange}
+                                    readOnly
+                                />
+                                <p className="help-text">Téléchargez d'abord une image</p>
+                            </div>
+
+                            <div className="form-group checkbox">
+                                <label>
+                                    <input
+                                        type="checkbox"
+                                        name="inStock"
+                                        checked={productForm.inStock}
+                                        onChange={handleProductInputChange}
+                                    />
+                                    En stock
+                                </label>
+                            </div>
+
+                            <button type="submit" disabled={loading || !productForm.imageUrl}>
+                                {loading ? 'Création...' : 'Créer Produit'}
+                            </button>
+                        </form>
+                    </section>
+
+                    {/* Liste des produits */}
+                    <section className="products-list-section">
+                        <h3>Produits ({products.length})</h3>
+                        <div className="products-grid">
+                            {products.map(product => (
+                                <ProductCard
+                                    key={product._id}
+                                    product={product}
+                                    onEdit={handleEditClick}
+                                    onDelete={handleDeleteProduct}
+                                    isAdmin={true}
+                                />
+                            ))}
                         </div>
-                    )}
+                    </section>
+                </>
+            )}
 
-                    <button type="submit" disabled={!selectedFile || loading}>
-                        {loading ? 'Téléchargement...' : 'Télécharger'}
-                    </button>
+            {activeTab === 'orders' && <AdminOrders />}
 
-                    {uploadStatus && <p className="upload-status">{uploadStatus}</p>}
-                </form>
-            </section>
+            {activeTab === 'content' && <AdminContentEditor />}
 
-            {/* Formulaire de création de produit */}
-            <section className="product-form-section">
-                <h3>Créer un Nouveau Produit</h3>
-                <form onSubmit={handleCreateProduct} className="product-form">
-                    <div className="form-group">
-                        <label htmlFor="name">Nom du produit*</label>
-                        <input
-                            type="text"
-                            id="name"
-                            name="name"
-                            value={productForm.name}
-                            onChange={handleProductInputChange}
-                            required
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label htmlFor="description">Description</label>
-                        <textarea
-                            id="description"
-                            name="description"
-                            value={productForm.description}
-                            onChange={handleProductInputChange}
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label htmlFor="price">Prix*</label>
-                        <input
-                            type="number"
-                            id="price"
-                            name="price"
-                            min="0"
-                            step="0.01"
-                            value={productForm.price}
-                            onChange={handleProductInputChange}
-                            required
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label htmlFor="imageUrl">URL de l'image</label>
-                        <input
-                            type="text"
-                            id="imageUrl"
-                            name="imageUrl"
-                            value={productForm.imageUrl}
-                            onChange={handleProductInputChange}
-                            readOnly
-                        />
-                        <p className="help-text">Téléchargez d'abord une image</p>
-                    </div>
-
-                    <div className="form-group checkbox">
-                        <label>
-                            <input
-                                type="checkbox"
-                                name="inStock"
-                                checked={productForm.inStock}
-                                onChange={handleProductInputChange}
-                            />
-                            En stock
-                        </label>
-                    </div>
-
-                    <button type="submit" disabled={loading || !productForm.imageUrl}>
-                        {loading ? 'Création...' : 'Créer Produit'}
-                    </button>
-                </form>
-            </section>
-
-            {/* Liste des produits */}
-            <section className="products-list-section">
-                <h3>Produits ({products.length})</h3>
-                <div className="products-grid">
-                    {products.map(product => (
-                        <ProductCard
-                            key={product._id}
-                            product={product}
-                            onEdit={handleEditClick}
-                            onDelete={handleDeleteProduct}
-                            isAdmin={true}
-                        />
-                    ))}
-                </div>
-            </section>
+            {activeTab === 'portfolio' && <AdminPortfolio />}
 
             <button onClick={logout} className="logout-button">
                 Se déconnecter

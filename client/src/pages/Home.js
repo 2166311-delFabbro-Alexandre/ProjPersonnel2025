@@ -1,34 +1,36 @@
 import { Link } from 'react-router-dom';
+import PortfolioGallery from '../components/PortfolioGallery';
 import './Home.css';
 
 export default function Home() {
   return (
     <div className="home-container">
-      <h1>Bienvenue sur notre site</h1>
-      <p>Découvrez notre collection de produits uniques</p>
-
-      <div className="home-actions">
-        <Link to="/shop" className="shop-button">
-          Visiter la boutique
-        </Link>
-      </div>
-
-      {/* <section className="home-features">
-        <div className="feature">
-          <h2>Produits de qualité</h2>
-          <p>Tous nos produits sont soigneusement sélectionnés pour leur qualité exceptionnelle.</p>
+      <section className="hero-section">
+        <div className="hero-content">
+          <h1>MPP</h1>
+          <p>Depuis 2009</p>
+          <div className="hero-buttons">
+            <Link to="/shop" className="btn primary-btn">
+              Explorer la boutique
+            </Link>
+            <Link to="/soins" className="btn secondary-btn">
+              Soins pour tatouages
+            </Link>
+          </div>
         </div>
+      </section>
 
-        <div className="feature">
-          <h2>Livraison rapide</h2>
-          <p>Nous expédions rapidement vos commandes pour que vous puissiez en profiter au plus vite.</p>
-        </div>
+      <PortfolioGallery />
 
-        <div className="feature">
-          <h2>Service client</h2>
-          <p>Notre équipe est disponible pour répondre à toutes vos questions.</p>
+      <section className="cta-section">
+        <div className="cta-content">
+          <h2>Prêt pour votre prochain tatouage?</h2>
+          <p>Découvrez nos produits et conseils pour prendre soin de vos tatouages.</p>
+          <Link to="/shop" className="btn primary-btn">
+            Voir nos produits
+          </Link>
         </div>
-      </section> */}
+      </section>
     </div>
   );
 }

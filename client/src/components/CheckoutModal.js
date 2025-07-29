@@ -11,7 +11,7 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, total, onSub
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Simple email validation
+        // Validation du courriel
         if (!email || !email.includes('@') || !email.includes('.')) {
             setError('Veuillez entrer une adresse email valide');
             return;

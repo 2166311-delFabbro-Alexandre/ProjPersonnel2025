@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import Home from "./pages/Home";
 import Shop from "./pages/Shop";
 import Cart from "./pages/Cart";
+import Soins from "./pages/Soins";
 import Admin from "./pages/Admin";
 import Navbar from "./components/Navbar";
 import { AuthProvider, useAuth } from "./context/AuthContext";
@@ -24,6 +25,7 @@ function AppRoutes() {
       <Route path="/" element={<Home />} />
       <Route path="/shop" element={<Shop />} />
       <Route path="/cart" element={<Cart />} />
+      <Route path="/soins" element={<Soins />} />
       <Route path="/admin" element={<Navigate to="/admin/login" />} />
       <Route path="/admin/login" element={<Admin />} />
       <Route
