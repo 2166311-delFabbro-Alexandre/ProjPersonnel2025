@@ -23,7 +23,7 @@ exports.getAllItems = async (req, res) => {
  */
 exports.createItem = async (req, res) => {
     try {
-        const { title, description, imageUrl, category, featured } = req.body;
+        const { title, imageUrl, featured } = req.body;
 
         // Check for required fields
         if (!title || !imageUrl) {
@@ -39,9 +39,7 @@ exports.createItem = async (req, res) => {
 
         const portfolioItem = new PortfolioItem({
             title,
-            description,
             imageUrl,
-            category: category || 'general',
             featured: featured || false,
             displayOrder: nextOrder
         });
@@ -68,15 +66,13 @@ exports.createItem = async (req, res) => {
  */
 exports.updateItem = async (req, res) => {
     try {
-        const { title, description, imageUrl, category, featured, displayOrder } = req.body;
+        const { title, imageUrl, featured, displayOrder } = req.body;
 
         const updatedItem = await PortfolioItem.findByIdAndUpdate(
             req.params.id,
             {
                 title,
-                description,
                 ...(imageUrl && { imageUrl }),
-                ...(category && { category }),
                 ...(featured !== undefined && { featured }),
                 ...(displayOrder !== undefined && { displayOrder })
             },
@@ -122,8 +118,16 @@ exports.deleteItem = async (req, res) => {
         // If using Cloudinary, extract and delete the image
         if (deletedItem.imageUrl && deletedItem.imageUrl.includes('cloudinary')) {
             try {
-                const publicId = deletedItem.imageUrl.split('/').pop().split('.')[0];
-                await cloudinary.uploader.destroy(`projet-personnel/${publicId}`);
+                // Extract the public ID including the folder path
+                const urlParts = deletedItem.imageUrl.split('/');
+                const publicIdWithExt = urlParts[urlParts.length - 1];
+                const publicId = publicIdWithExt.split('.')[0];
+
+                // Construct the full path including folder
+                const fullPublicId = `projet-personnel/portfolio/${publicId}`;
+
+                await cloudinary.cloudinary.uploader.destroy(fullPublicId);
+                console.log('Deleted image from Cloudinary:', fullPublicId);
             } catch (cloudinaryError) {
                 console.error('Error deleting image from Cloudinary:', cloudinaryError);
             }

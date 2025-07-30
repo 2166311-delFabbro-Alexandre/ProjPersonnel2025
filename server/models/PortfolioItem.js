@@ -1,21 +1,16 @@
 const mongoose = require('mongoose');
 
+/**
+ * Schéma pour les éléments du portfolio.
+ */
 const portfolioItemSchema = new mongoose.Schema({
     title: {
         type: String,
         required: true
     },
-    description: {
-        type: String,
-        default: ''
-    },
     imageUrl: {
         type: String,
         required: true
-    },
-    category: {
-        type: String,
-        default: 'general'
     },
     displayOrder: {
         type: Number,

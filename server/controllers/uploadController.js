@@ -14,10 +14,17 @@ exports.uploadImage = (req, res) => {
             return res.status(400).json({ message: "Aucun fichier téléchargé" });
         }
 
-        // Multer avec CloudinaryStorage a déjà téléchargé l'image
-        // et a placé l'URL dans req.file.path
-        res.json({ imageUrl: req.file.path });
-        console.log("Image uploaded:", req.file.path);
+        const folder = req.body.folder || 'products';
+        const folderPath = `projet-personnel/${folder}`;
+
+        const imageUrl = req.file.path;
+
+        console.log(`Image uploaded to ${folderPath}: ${imageUrl}`);
+
+        res.json({
+            imageUrl: imageUrl,
+            message: `Image téléchargée avec succès dans ${folderPath}`
+        });
     } catch (error) {
         console.error("Upload error:", error);
         res.status(500).json({

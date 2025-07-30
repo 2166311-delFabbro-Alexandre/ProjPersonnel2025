@@ -10,9 +10,13 @@ cloudinary.config({
 
 const storage = new CloudinaryStorage({
   cloudinary,
-  params: {
-    folder: "projet-personnel",
-    allowed_formats: ["jpg", "png", "jpeg"]
+  params: (req, file) => {
+    const folder = file.folder || 'products';
+    return {
+      folder: `projet-personnel/${folder}`,
+      allowed_formats: ["jpg", "png", "jpeg"],
+      public_id: `${Date.now()}-${file.originalname.split('.')[0]}`
+    };
   }
 });
 

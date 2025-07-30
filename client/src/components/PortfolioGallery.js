@@ -6,7 +6,6 @@ export default function PortfolioGallery() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [selectedItem, setSelectedItem] = useState(null);
-    const [activeCategory, setActiveCategory] = useState('all');
 
     useEffect(() => {
         fetchPortfolioItems();
@@ -39,14 +38,6 @@ export default function PortfolioGallery() {
         setSelectedItem(null);
     };
 
-    // Get unique categories
-    const categories = ['all', ...new Set(portfolioItems.map(item => item.category))];
-
-    // Filter items by category
-    const filteredItems = activeCategory === 'all'
-        ? portfolioItems
-        : portfolioItems.filter(item => item.category === activeCategory);
-
     if (loading) {
         return <div className="portfolio-loading">Chargement du portfolio...</div>;
     }
@@ -59,21 +50,11 @@ export default function PortfolioGallery() {
         return <div className="portfolio-empty">Aucun élément dans le portfolio pour le moment.</div>;
     }
 
+    const filteredItems = portfolioItems.filter(item => item.featured || item.displayOrder > 0).sort((a, b) => a.displayOrder - b.displayOrder);
+
     return (
         <div className="portfolio-section">
             <h2 className="portfolio-title">Portfolio</h2>
-
-            <div className="portfolio-categories">
-                {categories.map(category => (
-                    <button
-                        key={category}
-                        className={`category-button ${activeCategory === category ? 'active' : ''}`}
-                        onClick={() => setActiveCategory(category)}
-                    >
-                        {category === 'all' ? 'Tous' : category}
-                    </button>
-                ))}
-            </div>
 
             <div className="portfolio-gallery">
                 {filteredItems.map(item => (
@@ -89,7 +70,6 @@ export default function PortfolioGallery() {
                         />
                         <div className="portfolio-item-overlay">
                             <h3>{item.title}</h3>
-                            {item.description && <p>{item.description}</p>}
                         </div>
                     </div>
                 ))}
@@ -106,7 +86,6 @@ export default function PortfolioGallery() {
                         />
                         <div className="modal-info">
                             <h3>{selectedItem.title}</h3>
-                            {selectedItem.description && <p>{selectedItem.description}</p>}
                         </div>
                     </div>
                 </div>

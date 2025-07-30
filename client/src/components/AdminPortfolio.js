@@ -6,7 +6,6 @@ import {
     PointerSensor,
     useSensor,
     useSensors,
-    DragOverlay
 } from '@dnd-kit/core';
 import {
     arrayMove,
@@ -48,8 +47,6 @@ function SortablePortfolioItem({ item, onEdit, onDelete }) {
             </div>
             <div className="item-details">
                 <h4>{item.title}</h4>
-                <p className="item-category">{item.category || 'general'}</p>
-                {item.description && <p className="item-description">{item.description}</p>}
             </div>
             <div className="item-actions">
                 <button
@@ -90,8 +87,6 @@ export default function AdminPortfolio() {
     // Form state for adding/editing items
     const [formData, setFormData] = useState({
         title: '',
-        description: '',
-        category: 'general',
         featured: false,
         imageUrl: '',
         imageFile: null
@@ -142,8 +137,6 @@ export default function AdminPortfolio() {
     const resetForm = () => {
         setFormData({
             title: '',
-            description: '',
-            category: 'general',
             featured: false,
             imageUrl: '',
             imageFile: null
@@ -165,20 +158,30 @@ export default function AdminPortfolio() {
 
             if (formData.imageFile) {
                 const formDataWithImage = new FormData();
-                formDataWithImage.append('file', formData.imageFile);
-                formDataWithImage.append('upload_preset', 'projet-personnel');
+                formDataWithImage.append('image', formData.imageFile);
+                formDataWithImage.append('folder', 'portfolio');
 
-                const uploadResponse = await fetch('https://api.cloudinary.com/v1_1/datkwswao/image/upload', {
-                    method: 'POST',
-                    body: formDataWithImage
-                });
+                setLoading(true);
 
-                if (!uploadResponse.ok) {
-                    throw new Error('Erreur lors du téléchargement de l\'image');
+                try {
+                    const token = localStorage.getItem('adminToken');
+                    const uploadResponse = await fetch('/api/upload', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: formDataWithImage
+                    });
+
+                    if (!uploadResponse.ok) {
+                        throw new Error('Erreur lors du téléchargement de l\'image');
+                    }
+
+                    const uploadData = await uploadResponse.json();
+                    finalImageUrl = uploadData.imageUrl;
+                } catch (err) {
+                    throw new Error('Erreur lors du téléchargement: ' + err.message);
                 }
-
-                const uploadData = await uploadResponse.json();
-                finalImageUrl = uploadData.secure_url;
             }
 
             // Now create the portfolio item with the image URL
@@ -191,8 +194,6 @@ export default function AdminPortfolio() {
                 },
                 body: JSON.stringify({
                     title: formData.title,
-                    description: formData.description,
-                    category: formData.category,
                     featured: formData.featured,
                     imageUrl: finalImageUrl
                 })
@@ -224,8 +225,6 @@ export default function AdminPortfolio() {
     const handleEditItem = (item) => {
         setFormData({
             title: item.title,
-            description: item.description || '',
-            category: item.category || 'general',
             featured: item.featured || false,
             imageUrl: item.imageUrl,
             imageFile: null
@@ -246,20 +245,28 @@ export default function AdminPortfolio() {
 
             if (formData.imageFile) {
                 const formDataWithImage = new FormData();
-                formDataWithImage.append('file', formData.imageFile);
-                formDataWithImage.append('upload_preset', 'projet-personnel');
+                formDataWithImage.append('image', formData.imageFile); // Changed to 'image'
+                formDataWithImage.append('folder', 'portfolio');
 
-                const uploadResponse = await fetch('https://api.cloudinary.com/v1_1/datkwswao/image/upload', {
-                    method: 'POST',
-                    body: formDataWithImage
-                });
+                try {
+                    const token = localStorage.getItem('adminToken');
+                    const uploadResponse = await fetch('/api/upload', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: formDataWithImage
+                    });
 
-                if (!uploadResponse.ok) {
-                    throw new Error('Erreur lors du téléchargement de l\'image');
+                    if (!uploadResponse.ok) {
+                        throw new Error('Erreur lors du téléchargement de l\'image');
+                    }
+
+                    const uploadData = await uploadResponse.json();
+                    finalImageUrl = uploadData.imageUrl;
+                } catch (err) {
+                    throw new Error('Erreur lors du téléchargement: ' + err.message);
                 }
-
-                const uploadData = await uploadResponse.json();
-                finalImageUrl = uploadData.secure_url;
             }
 
             // Now update the portfolio item
@@ -272,8 +279,6 @@ export default function AdminPortfolio() {
                 },
                 body: JSON.stringify({
                     title: formData.title,
-                    description: formData.description,
-                    category: formData.category,
                     featured: formData.featured,
                     ...(formData.imageFile && { imageUrl: finalImageUrl })
                 })
@@ -436,29 +441,6 @@ export default function AdminPortfolio() {
                             value={formData.title}
                             onChange={handleInputChange}
                             required
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label htmlFor="description">Description:</label>
-                        <textarea
-                            id="description"
-                            name="description"
-                            value={formData.description}
-                            onChange={handleInputChange}
-                            rows="3"
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label htmlFor="category">Catégorie:</label>
-                        <input
-                            type="text"
-                            id="category"
-                            name="category"
-                            value={formData.category}
-                            onChange={handleInputChange}
-                            placeholder="ex: tattoo, art, flash"
                         />
                     </div>
 
