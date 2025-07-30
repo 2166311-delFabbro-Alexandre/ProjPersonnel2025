@@ -7,18 +7,28 @@ import './AdminProducts.css';
 /**
  * Composant pour la gestion des produits dans le tableau de bord administrateur
  * @returns {JSX.Element} - Le composant de gestion des produits
+ * 
+ * @author Alexandre del Fabbro
+ * Code inspiré de GitHub Copilot - Claude Sonnet 3.7 [Modèle massif de langage] - Version 30 juillet 2025
  */
 export default function AdminProducts() {
+    // État pour gérer le chargement
     const [loading, setLoading] = useState(false);
+    // État pour gérer les erreurs
     const [error, setError] = useState('');
-    const { logout } = useAuth();
-
+    // État pour stocker la liste des produits
     const [products, setProducts] = useState([]);
+    // État pour gérer le fichier sélectionné pour le téléchargement d'images
     const [selectedFile, setSelectedFile] = useState(null);
+    // État pour gérer le statut du téléchargement d'images
     const [uploadStatus, setUploadStatus] = useState('');
+    // État pour gérer l'URL de prévisualisation de l'image
     const [previewUrl, setPreviewUrl] = useState('');
+    // État pour gérer l'édition de produit
     const [isEditing, setIsEditing] = useState(false);
+    // État pour gérer le produit en cours d'édition
     const [editingProduct, setEditingProduct] = useState(null);
+    // État pour gérer le formulaire de création de produit
     const [productForm, setProductForm] = useState({
         name: '',
         description: '',
@@ -27,6 +37,7 @@ export default function AdminProducts() {
         inStock: true
     });
 
+    // Hook pour récupérer la liste des produits au chargement du composant
     useEffect(() => {
         fetchProducts();
     }, []);
@@ -62,9 +73,12 @@ export default function AdminProducts() {
 
             // Créer un aperçu de l'image sélectionnée
             const fileReader = new FileReader();
+            // Utiliser FileReader pour lire le fichier et mettre à jour l'URL de prévisualisation
             fileReader.onload = () => {
                 setPreviewUrl(fileReader.result);
             };
+            // Lire le fichier comme une URL de données
+            // Cela permet d'afficher un aperçu de l'image avant le téléchargement
             fileReader.readAsDataURL(file);
         }
     };
@@ -77,20 +91,28 @@ export default function AdminProducts() {
     const handleUpload = async (e) => {
         e.preventDefault();
 
+        // Vérifie si un fichier a été sélectionné
+        // Si aucun fichier n'est sélectionné, change le statut du téléchargement
         if (!selectedFile) {
             setUploadStatus('Veuillez sélectionner une image');
             return;
         }
 
+        // Met à jour le statut du téléchargement et active le chargement
         setUploadStatus('Téléchargement en cours...');
         setLoading(true);
 
         try {
+            // Instancie un objet FormData pour envoyer le fichier
             const formData = new FormData();
+            // Ajoute le fichier sélectionné et le dossier à FormData
             formData.append('image', selectedFile);
             formData.append('folder', 'products');
 
+            // Récupère le token JWT de l'authentification admin
             const token = localStorage.getItem('adminToken');
+            // Envoie le fichier à l'API de téléchargement
+            // Utilise fetch pour envoyer une requête POST à l'API de téléchargement
             const response = await fetch('/api/upload', {
                 method: 'POST',
                 headers: {
@@ -99,10 +121,14 @@ export default function AdminProducts() {
                 body: formData
             });
 
+            // Vérifie si la réponse est correcte
+            // Si la réponse n'est pas correcte, lance une erreur
             if (!response.ok) {
                 throw new Error('Échec du téléchargement');
             }
 
+            // Récupère les données de la réponse
+            // Si le téléchargement est réussi, met à jour le statut du téléchargement
             const data = await response.json();
             setUploadStatus('Image téléchargée avec succès!');
 
@@ -111,8 +137,10 @@ export default function AdminProducts() {
                 ...productForm,
                 imageUrl: data.imageUrl
             });
+            // Si une erreur se produit, met à jour le statut du téléchargement
         } catch (err) {
             setUploadStatus(`Erreur: ${err.message}`);
+            // Réinitialise l'état de chargement
         } finally {
             setLoading(false);
         }
@@ -123,7 +151,9 @@ export default function AdminProducts() {
      * @param {*} e - L'événement de changement.
      */
     const handleProductInputChange = (e) => {
+        // Met à jour l'état du formulaire de produit en fonction des changements
         const { name, value, type, checked } = e.target;
+        // Met à jour le formulaire de produit avec les nouvelles valeurs
         setProductForm({
             ...productForm,
             [name]: type === 'checkbox' ? checked : value
@@ -133,19 +163,23 @@ export default function AdminProducts() {
     /**
      * Gère la création d'un produit.
      * @param {*} e - L'événement de soumission du formulaire.
-     * @returns 
      */
     const handleCreateProduct = async (e) => {
         e.preventDefault();
 
+        // Vérifie si le nom et le prix du produit sont fournis
+        // Si l'un d'eux est manquant, affiche une erreur
         if (!productForm.name || !productForm.price) {
             setError('Nom et prix sont obligatoires');
             return;
         }
 
+        // Met à jour le statut de chargement
         setLoading(true);
         try {
+            // Récupère le token JWT de l'authentification admin
             const token = localStorage.getItem('adminToken');
+            // Envoie une requête POST pour créer un nouveau produit
             const response = await fetch('/api/products', {
                 method: 'POST',
                 headers: {
@@ -155,10 +189,13 @@ export default function AdminProducts() {
                 body: JSON.stringify(productForm)
             });
 
+            // Vérifie si la réponse est correcte
+            // Si la réponse n'est pas correcte, lance une erreur
             if (!response.ok) {
                 throw new Error('Erreur lors de la création du produit');
             }
 
+            // Récupère les données du nouveau produit créé
             const newProduct = await response.json();
             setProducts([...products, newProduct]);
 
@@ -170,12 +207,14 @@ export default function AdminProducts() {
                 imageUrl: '',
                 inStock: true
             });
+            // Réinitialiser le fichier sélectionné, l'aperçu de l'image et le statut de téléchargement
             setSelectedFile(null);
             setPreviewUrl('');
             setUploadStatus('');
-
+            // Si la création de produit échoue, affiche une erreur
         } catch (err) {
             setError(err.message);
+            // Réinitialise l'état de chargement
         } finally {
             setLoading(false);
         }
@@ -186,15 +225,19 @@ export default function AdminProducts() {
      * @param {Object} product - Le produit à éditer
      */
     const handleEditClick = (product) => {
+        // Met à jour l'état du produit en cours d'édition et active le mode édition
         setEditingProduct({ ...product });
+        // Active le mode édition
         setIsEditing(true);
     };
 
     /**
-     * Ferme le modal d'édition et réinitialise l'état d'édition
+     * Ferme le modal d'édition
      */
     const handleCancelEdit = () => {
+        // Réinitialise l'état d'édition et le produit en cours d'édition
         setIsEditing(false);
+        // Réinitialise le produit en cours d'édition
         setEditingProduct(null);
     };
 
@@ -203,9 +246,12 @@ export default function AdminProducts() {
      * @param {Event} e - L'événement de changement
      */
     const handleSaveEdit = async (updatedProduct) => {
+        // Met à jour l'état de chargement
         setLoading(true);
         try {
+            // Récupère le token JWT de l'authentification admin
             const token = localStorage.getItem('adminToken');
+            // Envoie une requête PUT pour mettre à jour le produit
             const response = await fetch(`/api/products/${updatedProduct._id}`, {
                 method: 'PUT',
                 headers: {
@@ -215,21 +261,27 @@ export default function AdminProducts() {
                 body: JSON.stringify(updatedProduct)
             });
 
+            // Vérifie si la réponse est correcte
+            // Si la réponse n'est pas correcte, lance une erreur
             if (!response.ok) {
                 throw new Error('Erreur lors de la mise à jour du produit');
             }
 
+            // Récupère les données du produit mis à jour
             const data = await response.json();
 
+            // Met à jour la liste des produits avec le produit modifié
             setProducts(products.map(p =>
                 p._id === data._id ? data : p
             ));
 
+            // Réinitialise l'état d'édition et le produit en cours d'édition
             setIsEditing(false);
             setEditingProduct(null);
-
+            // Si la mise à jour échoue, affiche une erreur
         } catch (err) {
             setError(err.message);
+            // Réinitialise l'état de chargement
         } finally {
             setLoading(false);
         }
@@ -240,13 +292,17 @@ export default function AdminProducts() {
      * @param {string} productId - L'ID du produit à supprimer
      */
     const handleDeleteProduct = async (productId) => {
+        // Vérifie si l'utilisateur confirme la suppression
         if (!window.confirm('Êtes-vous sûr de vouloir supprimer ce produit?')) {
             return;
         }
 
+        // Met à jour l'état de chargement
         setLoading(true);
         try {
+            // Récupère le token JWT de l'authentification admin
             const token = localStorage.getItem('adminToken');
+            // Envoie une requête DELETE pour supprimer le produit
             const response = await fetch(`/api/products/${productId}`, {
                 method: 'DELETE',
                 headers: {
@@ -254,6 +310,8 @@ export default function AdminProducts() {
                 }
             });
 
+            // Vérifie si la réponse est correcte
+            // Si la réponse n'est pas correcte, lance une erreur
             if (!response.ok) {
                 throw new Error('Erreur lors de la suppression du produit');
             }
@@ -266,14 +324,16 @@ export default function AdminProducts() {
                 setIsEditing(false);
                 setEditingProduct(null);
             }
-
+            // Si la suppression échoue, affiche une erreur
         } catch (err) {
             setError(err.message);
+            // Réinitialise l'état de chargement
         } finally {
             setLoading(false);
         }
     };
 
+    // Si le chargement est en cours et qu'aucun produit n'est chargé, afficher un message de chargement
     if (loading && products.length === 0) {
         return <div className="loading">Chargement des produits...</div>;
     }

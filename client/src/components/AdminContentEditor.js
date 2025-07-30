@@ -10,23 +10,23 @@ import './AdminContentEditor.css';
  * Code inspiré de GitHub Copilot - Claude Sonnet 3.7 [Modèle massif de langage] - Version 30 juillet 2025
  */
 export default function AdminContentEditor() {
-    // State pour gérer les pages, le contenu, les erreurs et les messages de succès
+    // État pour gérer les pages
     const [pages, setPages] = useState([
         { id: 'soins', name: 'Soins pour Tatouages' }
     ]);
-    // State pour la page sélectionnée
+    // État pour la page sélectionnée
     const [selectedPage, setSelectedPage] = useState('soins');
-    // State pour le titre de la page
+    // État pour le titre de la page
     const [title, setTitle] = useState('');
-    // State pour le contenu de la page
+    // État pour le contenu de la page
     const [content, setContent] = useState('');
-    // State pour gérer le chargement
+    // État pour gérer le chargement
     const [loading, setLoading] = useState(false);
-    // State pour gérer la sauvegarde
+    // État pour gérer la sauvegarde
     const [saving, setSaving] = useState(false);
-    // State pour les message d'erreur
+    // État pour les message d'erreur
     const [error, setError] = useState('');
-    // State pour les messages de succès
+    // État pour les messages de succès
     const [success, setSuccess] = useState('');
     // Hook pour gérer l'authentification
     const { logout } = useAuth();
@@ -171,26 +171,48 @@ export default function AdminContentEditor() {
         <div className="admin-content-editor">
             <h2>Éditeur de Contenu</h2>
 
-            <div className="page-selector">
-                <label htmlFor="page-select">Sélectionner une page:</label>
-                <select
-                    id="page-select"
-                    value={selectedPage}
-                    onChange={(e) => setSelectedPage(e.target.value)}
-                >
-                    {pages.map(page => (
-                        <option key={page.id} value={page.id}>
-                            {page.name}
-                        </option>
-                    ))}
-                </select>
+            {/* Barre de contrôle avec sélecteur de page et bouton de sauvegarde */}
+            <div className="editor-controls">
+                <div className="page-selector">
+                    <label htmlFor="page-select">Sélectionner une page:</label>
+                    <select
+                        id="page-select"
+                        value={selectedPage}
+                        onChange={(e) => setSelectedPage(e.target.value)}
+                    >
+                        {pages.map(page => (
+                            <option key={page.id} value={page.id}>
+                                {page.name}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                {/* Bouton de sauvegarde en haut */}
+                {!loading && (
+                    <button
+                        type="button"
+                        className="save-button top-save-button"
+                        disabled={saving || loading}
+                        onClick={handleSaveContent}
+                    >
+                        {saving ? 'Sauvegarde en cours...' : 'Sauvegarder le contenu'}
+                    </button>
+                )}
             </div>
 
+            {/* Messages d'état */}
+            {error && <div className="error-message">{error}</div>}
+            {success && <div className="success-message">{success}</div>}
+
+            {/* Affichage du formulaire de contenu si le chargement n'est pas en cours */}
             {loading ? (
                 <div className="loading">Chargement du contenu...</div>
             ) : (
                 <form onSubmit={handleSaveContent} className="content-form">
                     <div className="form-group">
+
+                        {/* Champ de saisie pour le titre de la page */}
                         <label htmlFor="page-title">Titre de la page:</label>
                         <input
                             type="text"
@@ -202,6 +224,8 @@ export default function AdminContentEditor() {
                     </div>
 
                     <div className="form-group">
+
+                        {/* Champ de saisie pour le contenu de la page */}
                         <label htmlFor="page-content">Contenu de la page (HTML):</label>
                         <textarea
                             id="page-content"
@@ -217,9 +241,7 @@ export default function AdminContentEditor() {
                         </p>
                     </div>
 
-                    {error && <div className="error-message">{error}</div>}
-                    {success && <div className="success-message">{success}</div>}
-
+                    {/* Aperçu du contenu saisi */}
                     <div className="content-preview">
                         <h3>Aperçu:</h3>
                         <div className="preview-container">
@@ -228,6 +250,7 @@ export default function AdminContentEditor() {
                         </div>
                     </div>
 
+                    {/* Bouton pour sauvegarder le contenu */}
                     <button
                         type="submit"
                         className="save-button"
@@ -235,6 +258,10 @@ export default function AdminContentEditor() {
                     >
                         {saving ? 'Sauvegarde en cours...' : 'Sauvegarder le contenu'}
                     </button>
+
+                    {/* Messages d'état */}
+                    {error && <div className="error-message">{error}</div>}
+                    {success && <div className="success-message">{success}</div>}
                 </form>
             )}
         </div>

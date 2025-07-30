@@ -11,7 +11,6 @@
 }
 
 .page-selector {
-    margin-bottom: 20px;
     display: flex;
     align-items: center;
     gap: 10px;
@@ -22,10 +21,11 @@
 }
 
 .page-selector select {
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 14px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  min-width: 200px;
 }
 
 .content-form {
@@ -93,18 +93,18 @@
 }
 
 .save-button {
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    padding: 12px 20px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 16px;
-    font-weight: bold;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.2s;
 }
 
 .save-button:hover {
-    background-color: #45a049;
+  background-color: #3e8e41;
 }
 
 .save-button:disabled {
@@ -112,20 +112,23 @@
     cursor: not-allowed;
 }
 
+.error-message, .success-message {
+  margin: 10px 0;
+  padding: 10px;
+  border-radius: 4px;
+  text-align: center;
+}
+
 .error-message {
-    background-color: #ffebee;
-    color: #c62828;
-    padding: 15px;
-    border-radius: 4px;
-    margin-bottom: 20px;
+  background-color: #ffebee;
+  color: #c62828;
+  border: 1px solid #ef9a9a;
 }
 
 .success-message {
-    background-color: #e8f5e9;
-    color: #2e7d32;
-    padding: 15px;
-    border-radius: 4px;
-    margin-bottom: 20px;
+  background-color: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #a5d6a7;
 }
 
 .loading {
@@ -143,4 +146,18 @@
     .page-selector select {
         width: 100%;
     }
+}
+
+.editor-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  background-color: #f5f5f5;
+  padding: 15px;
+  border-radius: 5px;
+}
+
+.top-save-button {
+  min-width: 120px;
 }
