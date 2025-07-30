@@ -159,13 +159,12 @@ export default function AdminPortfolio() {
             if (formData.imageFile) {
                 const formDataWithImage = new FormData();
                 formDataWithImage.append('image', formData.imageFile);
-                formDataWithImage.append('folder', 'portfolio');
 
                 setLoading(true);
 
                 try {
                     const token = localStorage.getItem('adminToken');
-                    const uploadResponse = await fetch('/api/upload', {
+                    const uploadResponse = await fetch(`/api/upload?folder=portfolio`, {
                         method: 'POST',
                         headers: {
                             'Authorization': `Bearer ${token}`
@@ -245,12 +244,11 @@ export default function AdminPortfolio() {
 
             if (formData.imageFile) {
                 const formDataWithImage = new FormData();
-                formDataWithImage.append('image', formData.imageFile); // Changed to 'image'
-                formDataWithImage.append('folder', 'portfolio');
+                formDataWithImage.append('image', formData.imageFile);
 
                 try {
                     const token = localStorage.getItem('adminToken');
-                    const uploadResponse = await fetch('/api/upload', {
+                    const uploadResponse = await fetch(`/api/upload?folder=portfolio`, {
                         method: 'POST',
                         headers: {
                             'Authorization': `Bearer ${token}`

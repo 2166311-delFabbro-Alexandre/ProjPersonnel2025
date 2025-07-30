@@ -1,5 +1,5 @@
 const PortfolioItem = require('../models/PortfolioItem');
-const cloudinary = require('../cloudinary');
+const cloudinary = require('../utils/cloudinary');
 
 /**
  * Get all portfolio items

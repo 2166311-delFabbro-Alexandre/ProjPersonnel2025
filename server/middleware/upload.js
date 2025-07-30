@@ -1,8 +1,10 @@
 const multer = require("multer");
-const { storage } = require("../cloudinary");
+const { storage } = require("..//utils/cloudinary");
 
 /**
  * Configuration de Multer pour le téléchargement d'images
+ * @param {string} folderName - Le dossier dans lequel télécharger l'image
+ * @returns {function} - Le middleware Multer configuré
  */
 const uploadImage = (folderName) => {
     const upload = multer({

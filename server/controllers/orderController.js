@@ -2,7 +2,14 @@ const Order = require('../models/Order');
 const nodemailer = require('nodemailer');
 
 /**
- * Create a new order and send confirmation email
+ * Controleur pour la gestion des commandes
+ * 
+ * @author Alexandre del Fabbro
+ * Code inspiré de GitHub Copilot - Claude Sonnet 3.7 [Modèle massif de langage] - Version du 30 juillet 2025
+ */
+
+/**
+ * Créer une nouvelle commande et envoyer un e-mail de confirmation
  */
 exports.createOrder = async (req, res) => {
   try {

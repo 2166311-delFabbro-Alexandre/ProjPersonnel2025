@@ -11,7 +11,7 @@ const router = express.Router();
  * Authentifiée - Nécessite un token JWT valide
  */
 router.post('/', authenticateToken, (req, res, next) => {
-  console.log({ folder: req.query.folder });
+  // Get folder from query parameters
   const folder = req.query.folder || 'products';
 
   // Use the middleware with the specified folder

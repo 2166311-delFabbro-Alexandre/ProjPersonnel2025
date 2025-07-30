@@ -50,14 +50,14 @@ export default function PortfolioGallery() {
         return <div className="portfolio-empty">Aucun élément dans le portfolio pour le moment.</div>;
     }
 
-    const filteredItems = portfolioItems.filter(item => item.featured || item.displayOrder > 0).sort((a, b) => a.displayOrder - b.displayOrder);
+    const sortedItems = [...portfolioItems].sort((a, b) => a.displayOrder - b.displayOrder);
 
     return (
         <div className="portfolio-section">
             <h2 className="portfolio-title">Portfolio</h2>
 
             <div className="portfolio-gallery">
-                {filteredItems.map(item => (
+                {sortedItems.map(item => (
                     <div
                         key={item._id}
                         className={`portfolio-item ${item.featured ? 'featured' : ''}`}

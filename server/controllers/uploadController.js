@@ -1,9 +1,4 @@
 /**
- * Controller pour gérer les téléchargements d'images vers Cloudinary
- * @module controllers/uploadController
- */
-
-/**
  * Télécharge une image vers Cloudinary
  * @param {Object} req - La requête Express
  * @param {Object} res - La réponse Express
@@ -39,7 +34,5 @@ exports.uploadImage = (req, res) => {
  * Non implémenté pour le moment, mais pourrait être ajouté plus tard
  */
 exports.deleteImage = (req, res) => {
-    // Cette fonctionnalité pourrait être implémentée pour supprimer des images de Cloudinary
-    // lorsqu'un produit est supprimé ou qu'une image est remplacée
     res.status(501).json({ message: "Non implémenté" });
 };
