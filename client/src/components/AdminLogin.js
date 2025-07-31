@@ -64,7 +64,7 @@ export default function AdminLogin() {
       {/* Affiche un message d'erreur si nécessaire */}
       {error && <div className="error-message">{error}</div>}
 
-      {/* Champs de saisie pour le nom d'utilisateur et le mot de passe */}
+      {/* Champs de saisie pour le nom d'utilisateur*/}
       <div className="form-group">
         <label htmlFor="username">Nom d'utilisateur</label>
         <input
@@ -76,6 +76,7 @@ export default function AdminLogin() {
         />
       </div>
 
+      {/* Champ de saisie pour le mot de passe */}
       <div className="form-group">
         <label htmlFor="password">Mot de passe</label>
         <input

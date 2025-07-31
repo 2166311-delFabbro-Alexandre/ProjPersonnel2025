@@ -3,37 +3,57 @@ import './ProductEditModal.css';
 
 /**
  * Modal d'édition de produit
+ * Permet aux administrateurs de modifier les détails d'un produit.
+ * 
  * @param {Object} props - Les propriétés du composant
  * @param {Object} props.product - Le produit à éditer
  * @param {Function} props.onSave - Fonction appelée pour sauvegarder les modifications
  * @param {Function} props.onCancel - Fonction appelée pour annuler les modifications
  * @param {boolean} props.loading - Indique si une opération est en cours
  * @returns {JSX.Element} - Modal d'édition
+ * 
+ * @author Alexandre del Fabbro
+ * Code inspiré de GitHub Copilot - Claude Sonnet 3.7 [Modèle massif de langage] - Version 30 juillet 2025
  */
 export default function ProductEditModal({ product, onSave, onCancel, loading }) {
+    // État pour gérer les détails du produit en cours d'édition
     const [editedProduct, setEditedProduct] = useState({ ...product });
+    // États pour gérer les erreurs et le chargement de l'image
     const [error, setError] = useState('');
     const [uploadingImage, setUploadingImage] = useState(false);
 
+    // Fonction pour gérer les changements dans les champs du formulaire
     const handleInputChange = (e) => {
+        // Met à jour l'état du produit en fonction des entrées de l'utilisateur
         const { name, value, type, checked } = e.target;
+        // Met à jour l'état du produit en cours d'édition
         setEditedProduct({
             ...editedProduct,
             [name]: type === 'checkbox' ? checked : value
         });
     };
 
+    // Fonction pour gérer la soumission du formulaire d'édition
     const handleSubmit = (e) => {
+        // Empêche le rechargement de la page lors de la soumission du formulaire
         e.preventDefault();
 
+        // Vérifie que les champs obligatoires sont remplis
         if (!editedProduct.name || !editedProduct.price) {
             setError('Nom et prix sont obligatoires');
             return;
         }
 
+        // Lance la fonction de sauvegarde avec le produit édité
         onSave(editedProduct);
     };
 
+    /**
+     * Gère le téléchargement de l'image du produit.
+     * 
+     * @param {*} e - L'événement de changement du champ de fichier
+     * @returns 
+     */
     const handleImageUpload = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -59,7 +79,6 @@ export default function ProductEditModal({ product, onSave, onCancel, loading })
 
             const data = await response.json();
 
-            // Update the imageUrl in the editing product
             setEditedProduct({
                 ...editedProduct,
                 imageUrl: data.imageUrl
@@ -73,12 +92,17 @@ export default function ProductEditModal({ product, onSave, onCancel, loading })
 
     return (
         <div className="modal-overlay">
+            {/* Conteneur principal de la modal d'édition */}
             <div className="edit-modal">
                 <h3>Modifier le Produit</h3>
 
+                {/* Affiche un message d'erreur si nécessaire */}
                 {error && <div className="error-message">{error}</div>}
 
+                {/* Formulaire d'édition du produit */}
                 <form onSubmit={handleSubmit} className="edit-form">
+
+                    {/* Champ de saisie pour le nom du produit */}
                     <div className="form-group">
                         <label htmlFor="edit-name">Nom du produit*</label>
                         <input
@@ -91,6 +115,7 @@ export default function ProductEditModal({ product, onSave, onCancel, loading })
                         />
                     </div>
 
+                    {/* Champ de saisie pour la description du produit */}
                     <div className="form-group">
                         <label htmlFor="edit-description">Description</label>
                         <textarea
@@ -101,6 +126,7 @@ export default function ProductEditModal({ product, onSave, onCancel, loading })
                         />
                     </div>
 
+                    {/* Champ de saisie pour le prix du produit */}
                     <div className="form-group">
                         <label htmlFor="edit-price">Prix*</label>
                         <input
@@ -115,6 +141,7 @@ export default function ProductEditModal({ product, onSave, onCancel, loading })
                         />
                     </div>
 
+                    {/* Champ de saisie pour l'URL de l'image du produit */}
                     <div className="form-group">
                         <label htmlFor="edit-imageUrl">URL de l'image</label>
                         <input
@@ -131,6 +158,7 @@ export default function ProductEditModal({ product, onSave, onCancel, loading })
                         )}
                     </div>
 
+                    {/* Champ de téléchargement pour une nouvelle image */}
                     <div className="form-group">
                         <label htmlFor="edit-new-image">Télécharger une nouvelle image</label>
                         <input
@@ -143,6 +171,7 @@ export default function ProductEditModal({ product, onSave, onCancel, loading })
                         {uploadingImage && <p>Téléchargement en cours...</p>}
                     </div>
 
+                    {/* Case à cocher pour indiquer si le produit est en stock */}
                     <div className="form-group checkbox">
                         <label>
                             <input
@@ -155,10 +184,13 @@ export default function ProductEditModal({ product, onSave, onCancel, loading })
                         </label>
                     </div>
 
+                    {/* Actions de la modal d'édition */}
                     <div className="modal-actions">
+                        {/* Bouton pour sauvegarder les modifications */}
                         <button type="submit" disabled={loading || uploadingImage} className="save-button">
                             {loading ? 'Sauvegarde...' : 'Sauvegarder'}
                         </button>
+                        {/* Bouton pour annuler les modifications */}
                         <button
                             type="button"
                             onClick={onCancel}

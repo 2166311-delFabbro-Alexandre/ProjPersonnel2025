@@ -375,6 +375,7 @@ export default function AdminProducts() {
             <section className="product-form-section">
                 <h3>Créer un Nouveau Produit</h3>
                 <form onSubmit={handleCreateProduct} className="product-form">
+                    {/* Champs de saisie pour le nom du produit */}
                     <div className="form-group">
                         <label htmlFor="name">Nom du produit*</label>
                         <input
@@ -387,6 +388,7 @@ export default function AdminProducts() {
                         />
                     </div>
 
+                    {/* Champs de saisie pour la description du produit */}
                     <div className="form-group">
                         <label htmlFor="description">Description</label>
                         <textarea
@@ -397,6 +399,7 @@ export default function AdminProducts() {
                         />
                     </div>
 
+                    {/* Champs de saisie pour le prix du produit */}
                     <div className="form-group">
                         <label htmlFor="price">Prix*</label>
                         <input
@@ -411,6 +414,7 @@ export default function AdminProducts() {
                         />
                     </div>
 
+                    {/* Champ de saisie pour l'URL de l'image */}
                     <div className="form-group">
                         <label htmlFor="imageUrl">URL de l'image</label>
                         <input
@@ -424,6 +428,7 @@ export default function AdminProducts() {
                         <p className="help-text">Téléchargez d'abord une image</p>
                     </div>
 
+                    {/* Case à cocher pour indiquer si le produit est en stock */}
                     <div className="form-group checkbox">
                         <label>
                             <input
@@ -436,6 +441,7 @@ export default function AdminProducts() {
                         </label>
                     </div>
 
+                    {/* Bouton de soumission pour créer le produit */}
                     <button type="submit" disabled={loading || !productForm.imageUrl}>
                         {loading ? 'Création...' : 'Créer Produit'}
                     </button>

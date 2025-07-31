@@ -568,7 +568,6 @@ export default function AdminPortfolio() {
             <div className="portfolio-items-container">
                 <h3>Éléments du Portfolio (Glisser-déposer pour réorganiser)</h3>
 
-
                 {portfolioItems.length === 0 ? (
                     <p className="no-items">Aucun élément dans le portfolio.</p>
                 ) : (
