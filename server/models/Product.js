@@ -6,6 +6,8 @@ const productSchema = new mongoose.Schema({
   price: { type: Number, required: true },
   imageUrl: String,
   inStock: { type: Boolean, default: true },
+  isUnique: { type: Boolean, default: false },
+  stockQuantity: { type: Number, default: null },
 }, {
   timestamps: true, // ajoute createdAt et updatedAt
 });

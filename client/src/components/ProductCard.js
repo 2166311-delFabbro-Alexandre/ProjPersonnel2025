@@ -56,9 +56,20 @@ export default function ProductCard({ product, onEdit, onDelete, isAdmin = false
             {/* Affiche le nom, le prix et la disponibilité du produit */}
             <h4>{product.name}</h4>
             <p className="price">{product.price.toFixed(2)} $</p>
-            <p className="stock">
-                {product.inStock ? 'En stock' : 'Rupture de stock'}
-            </p>
+            {/* Stock information */}
+            <div className="product-stock-info">
+                {!product.inStock ? (
+                    <span className="out-of-stock">Rupture de stock</span>
+                ) : product.isUnique ? (
+                    <span className="unique-item">Article unique</span>
+                ) : product.stockQuantity !== null ? (
+                    <span className="stock-quantity">
+                        {product.stockQuantity} en stock
+                    </span>
+                ) : (
+                    <span className="in-stock">En stock</span>
+                )}
+            </div>
 
             {/* Affiche les actions pour les administrateurs ou le bouton d'ajout au panier */}
             {isAdmin ? (

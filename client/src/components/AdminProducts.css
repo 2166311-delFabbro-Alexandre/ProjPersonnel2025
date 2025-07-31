@@ -124,3 +124,74 @@ button:disabled {
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   }
 }
+
+.inventory-management {
+    border: 1px solid #ddd;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+
+.inventory-management h4 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #333;
+    font-size: 16px;
+}
+
+.quantity-control {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.quantity-control input[type="number"] {
+    width: 80px;
+}
+
+.form-group.checkbox {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.form-group.checkbox input {
+    margin-right: 8px;
+}
+
+.form-group.checkbox.unlimited-stock {
+    margin-bottom: 0;
+}
+
+/* Styling for product card stock information */
+.product-stock-info {
+    margin-top: 5px;
+    font-size: 14px;
+}
+
+.out-of-stock {
+    color: #d9534f;
+    font-weight: bold;
+}
+
+.unique-item {
+    color: #5bc0de;
+    font-weight: bold;
+}
+
+.stock-quantity {
+    color: #5cb85c;
+}
+
+.in-stock {
+    color: #5cb85c;
+}
+
+/* Add a disabled style for form elements */
+input:disabled, 
+select:disabled, 
+textarea:disabled {
+    background-color: #e9ecef;
+    cursor: not-allowed;
+}

@@ -34,7 +34,10 @@ export default function AdminProducts() {
         description: '',
         price: '',
         imageUrl: '',
-        inStock: true
+        inStock: true,
+        isUnique: false,
+        stockQuantity: null,
+        unlimitedStock: false
     });
 
     // Hook pour récupérer la liste des produits au chargement du composant
@@ -154,10 +157,43 @@ export default function AdminProducts() {
         // Met à jour l'état du formulaire de produit en fonction des changements
         const { name, value, type, checked } = e.target;
         // Met à jour le formulaire de produit avec les nouvelles valeurs
-        setProductForm({
-            ...productForm,
-            [name]: type === 'checkbox' ? checked : value
-        });
+        let updatedForm = { ...productForm };
+
+        // Handle checkbox inputs
+        if (type === 'checkbox') {
+            updatedForm[name] = checked;
+
+            // Handle special inventory logic
+            if (name === 'inStock' && !checked) {
+                // If not in stock, disable all inventory options
+                updatedForm.isUnique = false;
+                updatedForm.unlimitedStock = false;
+                updatedForm.stockQuantity = null;
+            } else if (name === 'isUnique' && checked) {
+                // If unique item, set quantity to 1 and disable unlimited
+                updatedForm.stockQuantity = 1;
+                updatedForm.unlimitedStock = false;
+            } else if (name === 'unlimitedStock' && checked) {
+                // If unlimited, clear quantity value
+                updatedForm.stockQuantity = null;
+                updatedForm.isUnique = false;
+            }
+        } else {
+            // Handle regular inputs
+            if (name === 'stockQuantity') {
+                // Convert to number or null
+                updatedForm[name] = value === '' ? null : Number(value);
+
+                // If quantity is 1, suggest that it might be a unique item
+                if (Number(value) === 1 && !updatedForm.isUnique) {
+                    // Optional: add a UI hint that they might want to check "unique item"
+                }
+            } else {
+                updatedForm[name] = value;
+            }
+        }
+
+        setProductForm(updatedForm);
     };
 
     /**
@@ -172,6 +208,20 @@ export default function AdminProducts() {
         if (!productForm.name || !productForm.price) {
             setError('Nom et prix sont obligatoires');
             return;
+        }
+
+        const productData = { ...productForm };
+
+        // Handle inventory edge cases
+        if (!productData.inStock) {
+            productData.stockQuantity = null;
+            delete productData.unlimitedStock; // No need to send this to the server
+        } else if (productData.isUnique) {
+            productData.stockQuantity = 1;
+            delete productData.unlimitedStock;
+        } else if (productData.unlimitedStock) {
+            productData.stockQuantity = null;
+            delete productData.unlimitedStock;
         }
 
         // Met à jour le statut de chargement
@@ -428,17 +478,64 @@ export default function AdminProducts() {
                         <p className="help-text">Téléchargez d'abord une image</p>
                     </div>
 
-                    {/* Case à cocher pour indiquer si le produit est en stock */}
-                    <div className="form-group checkbox">
-                        <label>
-                            <input
-                                type="checkbox"
-                                name="inStock"
-                                checked={productForm.inStock}
-                                onChange={handleProductInputChange}
-                            />
-                            En stock
-                        </label>
+                    {/* Gestion de l'inventaire */}
+                    <div className="inventory-management">
+                        <h4>Gestion de l'inventaire</h4>
+
+                        {/* Case à cocher pour indiquer si le produit est en stock */}
+                        <div className="form-group checkbox">
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    name="inStock"
+                                    checked={productForm.inStock}
+                                    onChange={handleProductInputChange}
+                                />
+                                En stock
+                            </label>
+                        </div>
+
+                        {/* Option pour article unique */}
+                        <div className="form-group checkbox">
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    name="isUnique"
+                                    checked={productForm.isUnique}
+                                    onChange={handleProductInputChange}
+                                />
+                                Article unique (quantité limitée à 1)
+                            </label>
+                        </div>
+
+                        {/* Gestion de la quantité */}
+                        <div className="form-group">
+                            <label htmlFor="stockQuantity">Quantité en stock</label>
+                            <div className="quantity-control">
+                                <input
+                                    type="number"
+                                    id="stockQuantity"
+                                    name="stockQuantity"
+                                    min="0"
+                                    value={productForm.stockQuantity !== null ? productForm.stockQuantity : ''}
+                                    onChange={handleProductInputChange}
+                                    disabled={!productForm.inStock || productForm.isUnique || productForm.unlimitedStock}
+                                    placeholder={productForm.isUnique ? '1' : 'Quantité'}
+                                />
+                                <div className="form-group checkbox unlimited-stock">
+                                    <label>
+                                        <input
+                                            type="checkbox"
+                                            name="unlimitedStock"
+                                            checked={productForm.unlimitedStock}
+                                            onChange={handleProductInputChange}
+                                            disabled={!productForm.inStock || productForm.isUnique}
+                                        />
+                                        Quantité illimitée
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Bouton de soumission pour créer le produit */}

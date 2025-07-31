@@ -17,20 +17,47 @@ import './ProductEditModal.css';
  */
 export default function ProductEditModal({ product, onSave, onCancel, loading }) {
     // État pour gérer les détails du produit en cours d'édition
-    const [editedProduct, setEditedProduct] = useState({ ...product });
+    const [editedProduct, setEditedProduct] = useState({
+        ...product,
+        isUnique: product.isUnique || false,
+        stockQuantity: product.stockQuantity !== undefined ? product.stockQuantity : null,
+        unlimitedStock: product.stockQuantity === null && product.inStock ? true : false
+    });
     // États pour gérer les erreurs et le chargement de l'image
     const [error, setError] = useState('');
     const [uploadingImage, setUploadingImage] = useState(false);
 
     // Fonction pour gérer les changements dans les champs du formulaire
     const handleInputChange = (e) => {
-        // Met à jour l'état du produit en fonction des entrées de l'utilisateur
         const { name, value, type, checked } = e.target;
-        // Met à jour l'état du produit en cours d'édition
-        setEditedProduct({
-            ...editedProduct,
-            [name]: type === 'checkbox' ? checked : value
-        });
+        let updatedProduct = { ...editedProduct };
+
+        if (type === 'checkbox') {
+            updatedProduct[name] = checked;
+
+            // Handle special inventory logic
+            if (name === 'inStock' && !checked) {
+                updatedProduct.isUnique = false;
+                updatedProduct.unlimitedStock = false;
+                updatedProduct.stockQuantity = null;
+            } else if (name === 'isUnique' && checked) {
+                updatedProduct.stockQuantity = 1;
+                updatedProduct.unlimitedStock = false;
+            } else if (name === 'unlimitedStock' && checked) {
+                updatedProduct.stockQuantity = null;
+                updatedProduct.isUnique = false;
+            }
+        } else {
+            if (name === 'stockQuantity') {
+                updatedProduct[name] = value === '' ? null : Number(value);
+            } else if (name === 'price') {
+                updatedProduct[name] = value === '' ? '' : Number(value);
+            } else {
+                updatedProduct[name] = value;
+            }
+        }
+
+        setEditedProduct(updatedProduct);
     };
 
     // Fonction pour gérer la soumission du formulaire d'édition
@@ -171,17 +198,64 @@ export default function ProductEditModal({ product, onSave, onCancel, loading })
                         {uploadingImage && <p>Téléchargement en cours...</p>}
                     </div>
 
-                    {/* Case à cocher pour indiquer si le produit est en stock */}
-                    <div className="form-group checkbox">
-                        <label>
-                            <input
-                                type="checkbox"
-                                name="inStock"
-                                checked={editedProduct.inStock}
-                                onChange={handleInputChange}
-                            />
-                            En stock
-                        </label>
+                    {/* Gestion de l'inventaire */}
+                    <div className="inventory-management">
+                        <h4>Gestion de l'inventaire</h4>
+
+                        {/* Case à cocher pour indiquer si le produit est en stock */}
+                        <div className="form-group checkbox">
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    name="inStock"
+                                    checked={editedProduct.inStock}
+                                    onChange={handleInputChange}
+                                />
+                                En stock
+                            </label>
+                        </div>
+
+                        {/* Option pour article unique */}
+                        <div className="form-group checkbox">
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    name="isUnique"
+                                    checked={editedProduct.isUnique}
+                                    onChange={handleInputChange}
+                                />
+                                Article unique (quantité limitée à 1)
+                            </label>
+                        </div>
+
+                        {/* Gestion de la quantité */}
+                        <div className="form-group">
+                            <label htmlFor="stockQuantity">Quantité en stock</label>
+                            <div className="quantity-control">
+                                <input
+                                    type="number"
+                                    id="stockQuantity"
+                                    name="stockQuantity"
+                                    min="0"
+                                    value={editedProduct.stockQuantity !== null ? editedProduct.stockQuantity : ''}
+                                    onChange={handleInputChange}
+                                    disabled={!editedProduct.inStock || editedProduct.isUnique || editedProduct.unlimitedStock}
+                                    placeholder={editedProduct.isUnique ? '1' : 'Quantité'}
+                                />
+                                <div className="form-group checkbox unlimited-stock">
+                                    <label>
+                                        <input
+                                            type="checkbox"
+                                            name="unlimitedStock"
+                                            checked={editedProduct.unlimitedStock}
+                                            onChange={handleInputChange}
+                                            disabled={!editedProduct.inStock || editedProduct.isUnique}
+                                        />
+                                        Quantité illimitée
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Actions de la modal d'édition */}
