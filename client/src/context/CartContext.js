@@ -21,40 +21,37 @@ const CartContext = createContext();
  * @returns {JSX.Element} - Le fournisseur de contexte
  */
 export const CartProvider = ({ children }) => {
-    // État pour stocker les articles du panier et le nombre total d'articles
-    const [cartItems, setCartItems] = useState([]);
-    const [cartCount, setCartCount] = useState(0);
-
-    // Charge les articles du panier depuis le localStorage lors du montage du composant
-    useEffect(() => {
-        // Récupère les données du panier depuis le localStorage
+    // État pour stocker les articles du panier
+    const [cartItems, setCartItems] = useState(() => {
+        // Charge les articles du panier depuis le localStorage ou initialise un tableau vide
         const savedCart = localStorage.getItem('cart');
-
-        // Si des données existent, les parse et les stocke dans l'état
+        // Tente de parser les données du panier, si le parsing échoue, vide le localStorage
+        // et retourne un tableau vide
         if (savedCart) {
             try {
-                const parsedCart = JSON.parse(savedCart);
-                setCartItems(parsedCart);
-                updateCartCount(parsedCart);
+                return JSON.parse(savedCart);
             } catch (e) {
-                // En cas d'erreur de parsing, log l'erreur et vide le localStorage
                 console.error('Error parsing cart data:', e);
                 localStorage.removeItem('cart');
+                return [];
             }
         }
-    }, []);
+        // Si aucun article n'est trouvé, retourne un tableau vide
+        return [];
+    });
+    // État pour stocker le nombre total d'articles dans le panier
+    const [cartCount, setCartCount] = useState(0);
+
+    // Met à jour le nombre d'articles dans le panier chaque fois que cartItems change
+    useEffect(() => {
+        const count = cartItems.reduce((total, item) => total + item.quantity, 0);
+        setCartCount(count);
+    }, [cartItems]);
 
     // Met à jour le localStorage lorsque le panier change
     useEffect(() => {
         localStorage.setItem('cart', JSON.stringify(cartItems));
-        updateCartCount(cartItems);
     }, [cartItems]);
-
-    // Calcule le nombre total d'articles dans le panier
-    const updateCartCount = (items) => {
-        const count = items.reduce((total, item) => total + item.quantity, 0);
-        setCartCount(count);
-    };
 
     // Ajouter un article au panier
     const addToCart = (product) => {
