@@ -1,3 +1,9 @@
+/**
+ * Fichier CSS pour le composant d'éditeur de contenu administrateur
+ *
+ * @author Alexandre del Fabbro
+ * Code inspiré de GitHub Copilot - Claude Sonnet 3.7 [Modèle massif de langage] - Version 31 juillet 2025
+ */
 .admin-content-editor {
     max-width: 1200px;
     margin: 0 auto;

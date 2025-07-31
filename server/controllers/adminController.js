@@ -1,8 +1,12 @@
 const jwt = require("jsonwebtoken");
 
 /**
- * Controller pour gérer les fonctionnalités d'administration
- * @module controllers/adminController
+ * Controleur pour gérer les fonctionnalités d'administration
+ * Ce module contient des fonctions pour l'authentification des administrateurs,
+ * la récupération des données du tableau de bord et des statistiques.
+ * 
+ * @author Alexandre del Fabbro
+ * Code inspiré de GitHub Copilot - Claude Sonnet 3.7 [Modèle massif de langage] - Version 31 juillet 2025
  */
 
 /**
@@ -11,24 +15,29 @@ const jwt = require("jsonwebtoken");
  * @param {Object} res - La réponse Express
  */
 exports.login = (req, res) => {
+    // Variables pour les identifiants d'administration
     const { username, password } = req.body;
     const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "admin";
     const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "1234";
     const JWT_SECRET = process.env.JWT_SECRET || "default_secret_key";
 
+    // Vérification des identifiants d'administration
     if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+        // Génération du token JWT
         const token = jwt.sign(
             { username, role: "admin" },
             JWT_SECRET,
             { expiresIn: "1h" }
         );
 
+        // Envoi de la réponse avec le token
         res.status(200).json({
             success: true,
             token,
             message: "Connexion réussie"
         });
     } else {
+        // Envoi d'une erreur si les identifiants sont incorrects
         res.status(401).json({
             success: false,
             message: "Nom d'utilisateur ou mot de passe invalide"
@@ -55,10 +64,7 @@ exports.getDashboardData = (req, res) => {
  */
 exports.getStats = async (req, res) => {
     try {
-        // Ici, vous pourriez ajouter une logique pour récupérer des statistiques réelles
-        // Par exemple, le nombre de produits, commandes, utilisateurs, etc.
-
-        // Pour l'instant, renvoyons des statistiques fictives
+        // Statistiques fictives pour l'exemple
         const stats = {
             totalProducts: 0, // Vous pourriez utiliser Product.countDocuments()
             totalOrders: 0,

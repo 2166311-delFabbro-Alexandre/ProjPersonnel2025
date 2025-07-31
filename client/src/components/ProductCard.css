@@ -1,3 +1,9 @@
+/**
+ * Fichier CSS pour le composant de carte de produit
+ *
+ * @author Alexandre del Fabbro
+ * Code inspiré de GitHub Copilot - Claude Sonnet 3.7 [Modèle massif de langage] - Version 31 juillet 2025
+ */
 .product-card {
   border: 1px solid #ddd;
   border-radius: 5px;

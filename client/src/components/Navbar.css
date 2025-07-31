@@ -1,3 +1,9 @@
+/**
+ * Fichier CSS pour le composant de barre de navigation
+ *
+ * @author Alexandre del Fabbro
+ * Code inspiré de GitHub Copilot - Claude Sonnet 3.7 [Modèle massif de langage] - Version 31 juillet 2025
+ */
 .navbar {
   background-color: #333;
   height: 80px;
