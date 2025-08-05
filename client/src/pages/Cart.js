@@ -323,7 +323,7 @@ export default function Cart() {
                                 {/* Bouton pour diminuer la quantité */}
                                 <button
                                     className="quantity-btn"
-                                    onClick={() => updateQuantity(item._id, Math.max(1, item.quantity - 1))}
+                                    onClick={() => updateQuantity(item._id, Math.max(0, item.quantity - 1))}
                                 >
                                     -
                                 </button>

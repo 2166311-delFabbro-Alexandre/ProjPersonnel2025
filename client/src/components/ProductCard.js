@@ -24,26 +24,31 @@ export default function ProductCard({ product, onEdit, onDelete, isAdmin = false
      * Gère l'ajout du produit au panier.
      * Affiche une notification temporaire après l'ajout.
      */
-    const handleAddToCart = () => {
+    const handleAddToCart = async () => {
         // Appelle la fonction d'ajout au panier du contexte
-        addToCart(product);
+        const result = await addToCart(product);
 
-        // Affiche un message de notification temporaire
-        const notification = document.createElement('div');
-        notification.className = 'add-to-cart-notification';
-        notification.textContent = 'Produit ajouté au panier!';
-        document.body.appendChild(notification);
+        if (result.success) {
+            // Affiche un message de notification temporaire
+            const notification = document.createElement('div');
+            notification.className = 'add-to-cart-notification';
+            notification.textContent = 'Produit ajouté au panier!';
+            document.body.appendChild(notification);
 
-        // Gère l'affichage du message de notification
-        setTimeout(() => {
-            notification.classList.add('show');
+            // Gère l'affichage du message de notification
             setTimeout(() => {
-                notification.classList.remove('show');
+                notification.classList.add('show');
                 setTimeout(() => {
-                    document.body.removeChild(notification);
-                }, 300);
-            }, 2000);
-        }, 10);
+                    notification.classList.remove('show');
+                    setTimeout(() => {
+                        document.body.removeChild(notification);
+                    }, 300);
+                }, 2000);
+            }, 10);
+        } else {
+            // Affiche une alerte si l'ajout échoue
+            alert(result.message || 'Erreur lors de l\'ajout au panier.');
+        }
     };
 
     return (

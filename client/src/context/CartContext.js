@@ -67,16 +67,20 @@ export const CartProvider = ({ children }) => {
 
             // Vérifie si le produit est en stock
             if (!currentProduct.inStock) {
-                alert('Ce produit n\'est plus en stock.');
-                return;
+                return {
+                    success: false,
+                    message: 'Ce produit n\'est plus en stock.'
+                };
             }
 
             // Pour les articles uniques, vérifie s'ils sont déjà dans le panier
             if (currentProduct.isUnique) {
                 const existingItem = cartItems.find(item => item._id === product._id);
                 if (existingItem) {
-                    alert('Cet article unique est déjà dans votre panier.');
-                    return;
+                    return {
+                        success: false,
+                        message: 'Cet article unique est déjà dans votre panier.'
+                    };
                 }
             }
 
@@ -88,35 +92,12 @@ export const CartProvider = ({ children }) => {
 
                 // Si l'ajout d'un exemplaire dépasse le stock disponible
                 if (currentQuantityInCart + 1 > currentProduct.stockQuantity) {
-                    alert(`Désolé, il ne reste que ${currentProduct.stockQuantity} exemplaire(s) en stock.`);
+                    let result = {
+                        success: false,
+                        message: `Désolé, il ne reste que ${currentProduct.stockQuantity} exemplaire(s) en stock.`
+                    };
 
-                    // Si l'utilisateur n'a pas encore cet article dans son panier, proposez d'ajouter le maximum
-                    if (currentQuantityInCart === 0 && currentProduct.stockQuantity > 0) {
-                        const confirmAdd = window.confirm(`Voulez-vous ajouter les ${currentProduct.stockQuantity} exemplaires disponibles à votre panier?`);
-
-                        if (confirmAdd) {
-                            setCartItems(prevItems => [
-                                ...prevItems,
-                                { ...currentProduct, quantity: currentProduct.stockQuantity }
-                            ]);
-                        }
-                    }
-                    // Si l'utilisateur a déjà cet article dans son panier, proposez de mettre à jour la quantité
-                    else if (currentQuantityInCart < currentProduct.stockQuantity) {
-                        const confirmUpdate = window.confirm(`Voulez-vous mettre à jour votre panier avec le maximum disponible (${currentProduct.stockQuantity})?`);
-
-                        if (confirmUpdate) {
-                            setCartItems(prevItems =>
-                                prevItems.map(item =>
-                                    item._id === product._id
-                                        ? { ...item, quantity: currentProduct.stockQuantity }
-                                        : item
-                                )
-                            );
-                        }
-                    }
-
-                    return;
+                    return result;
                 }
             }
 
@@ -140,9 +121,17 @@ export const CartProvider = ({ children }) => {
                 }
             });
 
+            return {
+                success: true,
+                message: 'Produit ajouté au panier!'
+            };
+
         } catch (error) {
             console.error('Error adding to cart:', error);
-            alert('Impossible d\'ajouter ce produit au panier.');
+            return {
+                success: false,
+                message: 'Impossible d\'ajouter ce produit au panier.'
+            };
         }
     };
 
@@ -153,7 +142,7 @@ export const CartProvider = ({ children }) => {
 
     // Met à jour la quantité d'un article
     const updateQuantity = async (productId, quantity) => {
-        // If quantity is 0 or less, remove from cart
+        // Si la quantité est inférieure ou égale à 0, supprime l'article du panier
         if (quantity <= 0) {
             removeFromCart(productId);
             return;
