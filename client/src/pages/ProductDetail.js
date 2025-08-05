@@ -155,7 +155,7 @@ export default function ProductDetail() {
                     </button>
 
                     {/* Lien de retour à la boutique */}
-                    <Link to="/" className="back-to-shop">
+                    <Link to="/shop" className="back-to-shop">
                         Retour à la boutique
                     </Link>
                 </div>
