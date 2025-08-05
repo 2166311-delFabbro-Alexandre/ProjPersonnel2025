@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import './ProductCard.css';
 
@@ -24,7 +25,11 @@ export default function ProductCard({ product, onEdit, onDelete, isAdmin = false
      * Gère l'ajout du produit au panier.
      * Affiche une notification temporaire après l'ajout.
      */
-    const handleAddToCart = async () => {
+    const handleAddToCart = async (e) => {
+        // Empêche la navigation vers la page de détail lors du clic sur le bouton
+        e.preventDefault();
+        e.stopPropagation();
+
         // Appelle la fonction d'ajout au panier du contexte
         const result = await addToCart(product);
 
@@ -32,7 +37,7 @@ export default function ProductCard({ product, onEdit, onDelete, isAdmin = false
             // Affiche un message de notification temporaire
             const notification = document.createElement('div');
             notification.className = 'add-to-cart-notification';
-            notification.textContent = 'Produit ajouté au panier!';
+            notification.textContent = result.message;
             document.body.appendChild(notification);
 
             // Gère l'affichage du message de notification
@@ -51,59 +56,69 @@ export default function ProductCard({ product, onEdit, onDelete, isAdmin = false
         }
     };
 
+    /**
+     * Gère les clics sur les boutons d'administration
+     * @param {Event} e - L'événement de clic
+     * @param {Function} action - L'action à exécuter
+     */
+    const handleAdminAction = (e, action) => {
+        e.preventDefault();
+        e.stopPropagation();
+        action();
+    };
+
     return (
-        // Rendu de la carte de produit
-        <div className="product-card">
-            {/* Affiche l'image du produit si disponible */}
-            {product.imageUrl && (
-                <img src={product.imageUrl} alt={product.name} />
-            )}
-            {/* Affiche le nom, le prix et la disponibilité du produit */}
-            <h4>{product.name}</h4>
-            <p className="price">{product.price.toFixed(2)} $</p>
-            {/* Stock information */}
-            <div className="product-stock-info">
-                {!product.inStock ? (
-                    <span className="out-of-stock">Rupture de stock</span>
-                ) : product.isUnique ? (
-                    <span className="unique-item">Article unique</span>
-                ) : product.stockQuantity !== null ? (
-                    <span className="stock-quantity">
-                        {product.stockQuantity} en stock
-                    </span>
+        // Rendu de la carte de produit avec lien vers la page de détail
+        <Link to={`/product/${product._id}`} className="product-card-link">
+            <div className="product-card">
+                {/* Affiche l'image du produit si disponible */}
+                {product.imageUrl && (
+                    <img src={product.imageUrl} alt={product.name} />
+                )}
+                {/* Affiche le nom, le prix et la disponibilité du produit */}
+                <h4>{product.name}</h4>
+                <p className="price">{product.price.toFixed(2)} $</p>
+                {/* Stock information */}
+                <div className="product-stock-info">
+                    {!product.inStock ? (
+                        <span className="out-of-stock">Rupture de stock</span>
+                    ) : product.isUnique ? (
+                        <span className="unique-item">Article unique</span>
+                    ) : product.stockQuantity !== null ? (
+                        <span className="stock-quantity">
+                            {product.stockQuantity} en stock
+                        </span>
+                    ) : (
+                        <span className="in-stock">En stock</span>
+                    )}
+                </div>
+
+                {/* Affiche les actions pour les administrateurs ou le bouton d'ajout au panier */}
+                {isAdmin ? (
+                    <div className="product-actions admin-actions">
+                        <button
+                            onClick={(e) => handleAdminAction(e, () => onEdit(product))}
+                            className="edit-button"
+                        >
+                            Modifier
+                        </button>
+                        <button
+                            onClick={(e) => handleAdminAction(e, () => onDelete(product._id))}
+                            className="delete-button"
+                        >
+                            Supprimer
+                        </button>
+                    </div>
                 ) : (
-                    <span className="in-stock">En stock</span>
+                    <button
+                        onClick={handleAddToCart}
+                        className="add-to-cart-button"
+                        disabled={!product.inStock}
+                    >
+                        {product.inStock ? 'Ajouter au panier' : 'Indisponible'}
+                    </button>
                 )}
             </div>
-
-            {/* Affiche les actions pour les administrateurs ou le bouton d'ajout au panier */}
-            {isAdmin ? (
-                <div className="product-actions">
-                    {/* Boutons pour modifier le produit */}
-                    <button
-                        onClick={() => onEdit(product)}
-                        className="edit-button"
-                    >
-                        Modifier
-                    </button>
-                    {/* Bouton pour supprimer le produit */}
-                    <button
-                        onClick={() => onDelete(product._id)}
-                        className="delete-button"
-                    >
-                        Supprimer
-                    </button>
-                </div>
-            ) : (
-                // Bouton d'ajout au panier
-                <button
-                    onClick={handleAddToCart}
-                    className="add-to-cart-button"
-                    disabled={!product.inStock}
-                >
-                    {product.inStock ? 'Ajouter au panier' : 'Indisponible'}
-                </button>
-            )}
-        </div>
+        </Link>
     );
 }

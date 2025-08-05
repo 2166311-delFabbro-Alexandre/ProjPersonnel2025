@@ -5,6 +5,7 @@ import Shop from "./pages/Shop";
 import Cart from "./pages/Cart";
 import Soins from "./pages/Soins";
 import Admin from "./pages/Admin";
+import ProductDetail from './pages/ProductDetail';
 import Navbar from "./components/Navbar";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
@@ -55,6 +56,7 @@ function AppRoutes() {
       <Route path="/soins" element={<Soins />} />
       <Route path="/admin" element={<Navigate to="/admin/login" />} />
       <Route path="/admin/login" element={<Admin />} />
+      <Route path="/product/:productId" element={<ProductDetail />} />
       <Route
         path="/admin/dashboard"
         element={

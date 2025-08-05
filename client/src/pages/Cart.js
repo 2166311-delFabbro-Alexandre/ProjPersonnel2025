@@ -113,60 +113,6 @@ export default function Cart() {
     };
 
     /**
-     * Gère l'ouverture du modal de passage de commande.
-     * Vérifie la disponibilité des articles dans le panier avant de permettre le passage à la caisse.
-     */
-    const handleOpenCheckoutModal = async () => {
-        setIsVerifying(true);
-
-        try {
-            // Vérifier la disponibilité des articles mais ne pas bloquer l'ouverture du modal
-            const result = await verifyCartAvailability();
-
-            // Mettre à jour l'état des articles indisponibles pour l'affichage
-            if (!result.valid) {
-                setUnavailableItems(result.unavailableItems);
-
-                // Appliquer les mises à jour de disponibilité au panier
-                if (result.updatesToApply && result.updatesToApply.length > 0) {
-                    setCartItems(prevItems => {
-                        let newItems = [...prevItems];
-
-                        // Appliquer les mises à jour aux articles du panier
-                        result.updatesToApply.forEach(update => {
-                            if (update.type === 'markUnavailable') {
-                                newItems = newItems.map(item =>
-                                    item._id === update.id
-                                        ? { ...item, available: false, unavailableReason: update.reason }
-                                        : item
-                                );
-                            } else if (update.type === 'updateQuantity') {
-                                newItems = newItems.map(item =>
-                                    item._id === update.id
-                                        ? { ...item, quantity: update.quantity }
-                                        : item
-                                );
-                            }
-                        });
-
-                        return newItems;
-                    });
-                }
-            } else {
-                setUnavailableItems([]);
-            }
-
-            // Ouvrir le modal dans tous les cas
-            setIsCheckoutModalOpen(true);
-        } catch (error) {
-            console.error('Error before checkout:', error);
-            setVerificationError('Impossible de vérifier la disponibilité des produits');
-        } finally {
-            setIsVerifying(false);
-        }
-    };
-
-    /**
      * Gère le changement de quantité d'un article dans le panier.
      * 
      * @param {*} e - L'événement de changement.
