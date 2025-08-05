@@ -6,6 +6,7 @@ const { authenticateToken } = require('../middleware/auth');
 // Routes publiques
 router.get('/', productController.getAllProducts);
 router.get('/:id', productController.getProductById);
+router.post('/check-availability', productController.checkAvailability);
 
 // Routes protégées
 router.post('/', authenticateToken, productController.createProduct);

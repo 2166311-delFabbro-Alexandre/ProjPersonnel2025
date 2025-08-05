@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import CheckoutModal from '../components/CheckoutModal';
@@ -15,10 +15,156 @@ import './Cart.css';
  * Code inspiré de GitHub Copilot - Claude Sonnet 3.7 [Modèle massif de langage] - Version 30 juillet 2025
  */
 export default function Cart() {
+    const prevCartItemIdsRef = useRef('');
     // Utilise le contexte du panier pour accéder aux articles du panier et aux fonctions associées
-    const { cartItems, removeFromCart, updateQuantity, clearCart, getCartTotal } = useCart();
+    const {
+        cartItems,
+        removeFromCart,
+        updateQuantity,
+        clearCart,
+        getCartTotal,
+        setCartItems,
+        verifyCartAvailability
+    } = useCart();
+
     // État pour gérer l'ouverture du modal de passage de commande
     const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
+    // États pour gérer la vérification de la disponibilité des articles
+    const [unavailableItems, setUnavailableItems] = useState([]);
+    const [isVerifying, setIsVerifying] = useState(false);
+    const [verificationError, setVerificationError] = useState('');
+
+    // Vérifie la disponibilité des articles au montage du composant
+    useEffect(() => {
+        // N'exécute la vérification que si le panier contient des articles
+        if (cartItems.length > 0 && !isVerifying) {
+            checkAvailability();
+        }
+    }, []);
+
+    useEffect(() => {
+        // Store a reference to the cart's contents to detect "real" changes
+        const cartItemIds = cartItems.map(item => item._id).join(',');
+
+        // Only verify if the cart's IDs have actually changed
+        if (cartItemIds !== prevCartItemIdsRef.current) {
+            prevCartItemIdsRef.current = cartItemIds;
+
+            // Prevent unnecessary checks during user interactions
+            const timer = setTimeout(() => {
+                checkAvailability();
+            }, 500); // Debounce to avoid multiple rapid checks
+
+            return () => clearTimeout(timer);
+        }
+    }, [cartItems]);
+
+    // Fonction pour vérifier la disponibilité des produits
+    const checkAvailability = async () => {
+        // Si une vérification est déjà en cours, ne rien faire
+        if (isVerifying) return;
+
+        setIsVerifying(true);
+        setVerificationError('');
+
+        try {
+            const result = await verifyCartAvailability();
+
+            // Vérifie si le résultat est valide
+            if (!result.valid) {
+                setUnavailableItems(result.unavailableItems);
+
+                // Met à jour les quantités ou supprime les articles non disponibles
+                if (result.updatesToApply && result.updatesToApply.length > 0) {
+                    // Applique les mises à jour en une seule fois
+                    setCartItems(prevItems => {
+                        let newItems = [...prevItems];
+
+                        // Applique les mises à jour aux articles du panier
+                        result.updatesToApply.forEach(update => {
+                            if (update.type === 'markUnavailable') {
+                                newItems = newItems.map(item =>
+                                    item._id === update.id
+                                        ? { ...item, available: false, unavailableReason: update.reason }
+                                        : item
+                                );
+                            } else if (update.type === 'updateQuantity') {
+                                newItems = newItems.map(item =>
+                                    item._id === update.id
+                                        ? { ...item, quantity: update.quantity }
+                                        : item
+                                );
+                            }
+                        });
+
+                        return newItems;
+                    });
+                }
+
+            } else {
+                setUnavailableItems([]);
+            }
+        } catch (error) {
+            console.error('Error checking availability:', error);
+            setVerificationError('Impossible de vérifier la disponibilité des produits');
+        } finally {
+            setIsVerifying(false);
+        }
+    };
+
+    /**
+     * Gère l'ouverture du modal de passage de commande.
+     * Vérifie la disponibilité des articles dans le panier avant de permettre le passage à la caisse.
+     */
+    const handleOpenCheckoutModal = async () => {
+        setIsVerifying(true);
+
+        try {
+            // Vérifier la disponibilité des articles mais ne pas bloquer l'ouverture du modal
+            const result = await verifyCartAvailability();
+
+            // Mettre à jour l'état des articles indisponibles pour l'affichage
+            if (!result.valid) {
+                setUnavailableItems(result.unavailableItems);
+
+                // Appliquer les mises à jour de disponibilité au panier
+                if (result.updatesToApply && result.updatesToApply.length > 0) {
+                    setCartItems(prevItems => {
+                        let newItems = [...prevItems];
+
+                        // Appliquer les mises à jour aux articles du panier
+                        result.updatesToApply.forEach(update => {
+                            if (update.type === 'markUnavailable') {
+                                newItems = newItems.map(item =>
+                                    item._id === update.id
+                                        ? { ...item, available: false, unavailableReason: update.reason }
+                                        : item
+                                );
+                            } else if (update.type === 'updateQuantity') {
+                                newItems = newItems.map(item =>
+                                    item._id === update.id
+                                        ? { ...item, quantity: update.quantity }
+                                        : item
+                                );
+                            }
+                        });
+
+                        return newItems;
+                    });
+                }
+            } else {
+                setUnavailableItems([]);
+            }
+
+            // Ouvrir le modal dans tous les cas
+            setIsCheckoutModalOpen(true);
+        } catch (error) {
+            console.error('Error before checkout:', error);
+            setVerificationError('Impossible de vérifier la disponibilité des produits');
+        } finally {
+            setIsVerifying(false);
+        }
+    };
 
     /**
      * Gère le changement de quantité d'un article dans le panier.
@@ -47,29 +193,15 @@ export default function Cart() {
      */
     const handleSubmitOrder = async ({ email, name, cartItems, total }) => {
         try {
-            // Vérifie que les champs requis sont remplis
+            // Validate required fields
             if (!email || !name || !cartItems || cartItems.length === 0) {
                 throw new Error('Veuillez remplir tous les champs requis');
             }
 
-            // Formate les articles du panier pour l'envoi au serveur
-            const formattedItems = cartItems.map(item => ({
-                productId: item._id,
-                name: item.name,
-                price: item.price,
-                quantity: item.quantity,
-                imageUrl: item.imageUrl || ''
-            }));
+            console.log('Submitting order with items:', cartItems);
+            console.log('Total amount:', total);
 
-            // Log les détails de la commande pour le débogage
-            console.log('Submitting order:', {
-                customerName: name,
-                customerEmail: email,
-                items: formattedItems,
-                totalAmount: total
-            });
-
-            // Envoie les données de la commande au serveur
+            // Send data to server
             const response = await fetch('/api/orders', {
                 method: 'POST',
                 headers: {
@@ -78,24 +210,27 @@ export default function Cart() {
                 body: JSON.stringify({
                     customerName: name,
                     customerEmail: email,
-                    items: formattedItems,
+                    items: cartItems,
                     totalAmount: total
                 })
             });
 
-            // Stocke la réponse du serveur
-            const data = await response.json();
+            // Log the raw response for debugging
+            const rawResponse = await response.text();
+            console.log('Raw server response:', rawResponse);
 
-            // Vérifie si la réponse est correcte, sinon lance une erreur
+            // Parse the response
+            const data = rawResponse ? JSON.parse(rawResponse) : {};
+
+            // Check for errors
             if (!response.ok) {
                 throw new Error(data.message || 'Erreur lors de la création de la commande');
             }
 
-            // Vide le panier après la soumission de la commande et retourne les données
+            // Clear cart and return data
             clearCart();
             return data;
         } catch (error) {
-            // Erreur lors de la soumission de la commande, log l'erreur et lance une exception
             console.error('Order submission error:', error);
             throw error;
         }
@@ -117,7 +252,24 @@ export default function Cart() {
 
     return (
         <div className="cart-container">
+            {/* Affiche un message si des articles ne sont plus disponibles */}
+            {cartItems.some(item => item.available === false) && (
+                <div className="unavailable-explanation">
+                    <p>
+                        <strong>Note:</strong> Certains articles dans votre panier (affichés en rouge) ne sont plus
+                        disponibles et ne seront pas inclus dans votre commande. Vous pouvez les supprimer ou les
+                        conserver pour référence.
+                    </p>
+                </div>
+            )}
             <h1>Votre Panier</h1>
+
+            {/* Affiche les erreurs de vérification */}
+            {verificationError && (
+                <div className="error-message">
+                    {verificationError}
+                </div>
+            )}
 
             {/* En-tête du panier avec les colonnes */}
             <div className="cart-header">
@@ -130,15 +282,28 @@ export default function Cart() {
 
             {/* Affiche chaque article du panier */}
             {cartItems.map(item => (
-                <div key={item._id} className="cart-item">
+                <div key={item._id} className={`cart-item ${item.available === false ? 'unavailable-item' : ''}`}>
                     <div className="product-info">
                         {/* Affiche l'image du produit si disponible */}
                         {item.imageUrl && (
-                            <img src={item.imageUrl} alt={item.name} className="cart-item-image" />
+                            <img
+                                src={item.imageUrl}
+                                alt={item.name}
+                                className={`cart-item-image ${item.available === false ? 'grayscale' : ''}`}
+                            />
                         )}
                         {/* Affiche le nom et la description du produit */}
                         <div className="cart-item-details">
-                            <h4>{item.name}</h4>
+                            <h4 className={item.available === false ? 'strike-through' : ''}>
+                                {item.name}
+                                {item.available === false && (
+                                    <span className="unavailable-badge">
+                                        {item.unavailableReason === 'deleted' && 'Produit supprimé'}
+                                        {item.unavailableReason === 'outOfStock' && 'Rupture de stock'}
+                                        {item.unavailableReason === 'uniqueItemSold' && 'Déjà vendu'}
+                                    </span>
+                                )}
+                            </h4>
                             {item.description && <p className="cart-item-description">{item.description}</p>}
                         </div>
                     </div>
@@ -150,31 +315,42 @@ export default function Cart() {
 
                     {/* Champ de saisie pour la quantité avec boutons pour augmenter/diminuer */}
                     <div className="cart-item-quantity">
-                        {/* Bouton pour diminuer la quantité */}
-                        <button
-                            className="quantity-btn"
-                            onClick={() => updateQuantity(item._id, Math.max(1, item.quantity - 1))}
-                        >
-                            -
-                        </button>
-                        {/* Champ de saisie pour la quantité */}
-                        <input
-                            type="number"
-                            value={item.quantity}
-                            min="1"
-                            onChange={(e) => handleQuantityChange(e, item._id)}
-                        />
-                        {/* Bouton pour augmenter la quantité */}
-                        <button
-                            className="quantity-btn"
-                            onClick={() => updateQuantity(item._id, item.quantity + 1)}
-                        >
-                            +
-                        </button>
+                        {/* Affiche un message si l'article n'est pas disponible */}
+                        {item.available === false ? (
+                            <span className="unavailable-quantity">Non disponible</span>
+                        ) : (
+                            <>
+                                {/* Bouton pour diminuer la quantité */}
+                                <button
+                                    className="quantity-btn"
+                                    onClick={() => updateQuantity(item._id, Math.max(1, item.quantity - 1))}
+                                >
+                                    -
+                                </button>
+                                {/* Champ de saisie pour la quantité */}
+                                <input
+                                    type="number"
+                                    value={item.quantity}
+                                    min="1"
+                                    onChange={(e) => handleQuantityChange(e, item._id)}
+                                />
+                                {/* Bouton pour augmenter la quantité */}
+                                <button
+                                    className="quantity-btn"
+                                    onClick={() => updateQuantity(item._id, item.quantity + 1)}
+                                >
+                                    +
+                                </button>
+                            </>
+                        )}
                     </div>
 
                     <div className="cart-item-total">
-                        {(item.price * item.quantity).toFixed(2)} $
+                        {item.available === false ? (
+                            <span className="unavailable-total">Indisponible</span>
+                        ) : (
+                            `${(item.price * item.quantity).toFixed(2)} $`
+                        )}
                     </div>
 
                     <div className="cart-item-remove">
@@ -211,8 +387,9 @@ export default function Cart() {
                 <button
                     className="checkout-btn"
                     onClick={() => setIsCheckoutModalOpen(true)}
+                    disabled={isVerifying || cartItems.length === 0}
                 >
-                    Passer la commande
+                    {isVerifying ? 'Vérification...' : 'Passer la commande'}
                 </button>
             </div>
 

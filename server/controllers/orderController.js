@@ -1,4 +1,5 @@
 const Order = require('../models/Order');
+const Product = require('../models/Product');
 const nodemailer = require('nodemailer');
 
 /**
@@ -19,7 +20,7 @@ exports.createOrder = async (req, res) => {
 
     console.log('Order request received:', { customerName, customerEmail, itemsCount: items?.length, totalAmount });
 
-    // Validate request
+    // Validation des données de la commande
     if (!customerName || !customerEmail || !items || items.length === 0 || !totalAmount) {
       console.log('Validation failed:', { customerName, customerEmail, hasItems: !!items, itemsLength: items?.length, totalAmount });
       return res.status(400).json({
@@ -28,7 +29,7 @@ exports.createOrder = async (req, res) => {
       });
     }
 
-    // Email validation
+    // Validation de l'adresse e-mail
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(customerEmail)) {
       return res.status(400).json({
@@ -37,18 +38,47 @@ exports.createOrder = async (req, res) => {
       });
     }
 
+    // Vérification de l'existence des produits dans la base de données
+    const productIds = items.map(item => item.productId);
+    const products = await Product.find({ _id: { $in: productIds } });
+
+    // If we couldn't find all products, it might mean some were deleted
+    if (products.length < productIds.length) {
+      console.log(`Warning: Some products weren't found. Requested: ${productIds.length}, Found: ${products.length}`);
+    }
+
+    // Map products by ID for easier lookup
+    const productMap = {};
+    products.forEach(product => {
+      productMap[product._id.toString()] = product;
+    });
+
+    // Only filter out products that no longer exist in the database at all
+    const processedItems = items.filter(item => {
+      const product = productMap[item.productId];
+      return !!product; // Only keep items where the product exists
+    });
+
+    // If no valid items remain, reject the order
+    if (processedItems.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Aucun article valide dans cette commande'
+      });
+    }
+
     // Create new order in database
     const newOrder = new Order({
       customerName,
       customerEmail,
-      items: items.map(item => ({
+      items: processedItems.map(item => ({
         productId: item.productId,
         name: item.name,
         price: item.price,
         quantity: item.quantity,
         imageUrl: item.imageUrl
       })),
-      totalAmount
+      totalAmount: totalAmount
     });
 
     console.log('About to save order:', JSON.stringify(newOrder, null, 2));
@@ -57,13 +87,31 @@ exports.createOrder = async (req, res) => {
 
     console.log('Order saved successfully:', savedOrder._id);
 
+    for (const orderItem of processedItems) {
+      const product = productMap[orderItem.productId];
+      if (!product) continue;
+
+      // If it's a unique item, mark as out of stock
+      if (product.isUnique) {
+        await Product.findByIdAndUpdate(orderItem.productId, { inStock: false });
+      }
+      // Otherwise decrement the quantity
+      else if (product.stockQuantity !== null) {
+        const newQuantity = product.stockQuantity - orderItem.quantity;
+        await Product.findByIdAndUpdate(orderItem.productId, {
+          stockQuantity: newQuantity,
+          inStock: newQuantity > 0
+        });
+      }
+    }
+
     // Send confirmation email
     await sendOrderConfirmationEmail(savedOrder);
 
     res.status(201).json({
       success: true,
       message: 'Commande créée avec succès',
-      order: savedOrder
+      order: savedOrder,
     });
   } catch (error) {
     console.error('Error creating order:', error);

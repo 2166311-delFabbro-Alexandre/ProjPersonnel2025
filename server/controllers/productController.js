@@ -88,3 +88,36 @@ exports.deleteProduct = async (req, res) => {
         res.status(500).json({ error: 'Erreur lors de la suppression du produit' });
     }
 };
+
+/**
+ * Vérifier la disponibilité des produits dans le panier
+ */
+exports.checkAvailability = async (req, res) => {
+    try {
+        const { productIds } = req.body;
+
+        if (!productIds || !Array.isArray(productIds)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Identifiants de produits invalides'
+            });
+        }
+
+        // Récupère les produits correspondants aux IDs fournis
+        const products = await Product.find({
+            _id: { $in: productIds }
+        }).select('_id name price imageUrl inStock isUnique stockQuantity');
+
+        return res.status(200).json({
+            success: true,
+            products
+        });
+    } catch (error) {
+        console.error('Error checking product availability:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la vérification des produits',
+            error: error.message
+        });
+    }
+};
