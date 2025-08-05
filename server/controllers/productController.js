@@ -34,7 +34,37 @@ exports.getProductById = async (req, res) => {
  */
 exports.createProduct = async (req, res) => {
     try {
-        const newProduct = new Product(req.body);
+        const { name, description, price, images, inStock, isUnique, stockQuantity } = req.body;
+
+        // Validate that we have at least one image
+        if (!images || !Array.isArray(images) || images.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Au moins une image est requise pour le produit'
+            });
+        }
+
+        // Process images
+        const processedImages = images.map((img, index) => ({
+            url: img.url,
+            isMain: img.isMain || (index === 0 && !images.some(i => i.isMain)),
+            order: img.order || index
+        }));
+
+        // Get the main image URL for backward compatibility
+        const mainImage = processedImages.find(img => img.isMain) || processedImages[0];
+
+        const newProduct = new Product({
+            name,
+            description,
+            price,
+            imageUrl: mainImage.url,
+            images: processedImages,
+            inStock: inStock !== undefined ? inStock : true,
+            isUnique: isUnique || false,
+            stockQuantity: isUnique ? 1 : stockQuantity
+        });
+
         const saved = await newProduct.save();
         res.status(201).json(saved);
     } catch (err) {
@@ -51,9 +81,37 @@ exports.createProduct = async (req, res) => {
  */
 exports.updateProduct = async (req, res) => {
     try {
+        const { imageUrl, images, ...otherData } = req.body;
+
+        // Process images
+        let updateData = { ...otherData };
+
+        // If we have images array
+        if (images && Array.isArray(images)) {
+            updateData.images = images.map((img, index) => ({
+                url: img.url,
+                isMain: img.isMain || (index === 0 && !imageUrl),
+                order: img.order || index
+            }));
+        }
+
+        // If there's a single imageUrl, add it as a main image if no images exist
+        if (imageUrl) {
+            updateData.imageUrl = imageUrl;
+
+            // If we don't have any images yet, create one from imageUrl
+            if (!updateData.images || updateData.images.length === 0) {
+                updateData.images = [{
+                    url: imageUrl,
+                    isMain: true,
+                    order: 0
+                }];
+            }
+        }
+
         const updatedProduct = await Product.findByIdAndUpdate(
             req.params.id,
-            req.body,
+            updateData,
             { new: true, runValidators: true }
         );
 

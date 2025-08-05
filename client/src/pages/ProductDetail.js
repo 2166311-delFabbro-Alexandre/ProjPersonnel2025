@@ -18,6 +18,7 @@ export default function ProductDetail() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const { addToCart } = useCart();
+    const [selectedImage, setSelectedImage] = useState(null);
 
     // Récupère les détails du produit depuis l'API
     useEffect(() => {
@@ -32,6 +33,13 @@ export default function ProductDetail() {
 
                 const data = await response.json();
                 setProduct(data);
+
+                if (data.images && data.images.length > 0) {
+                    const mainImage = data.images.find(img => img.isMain) || data.images[0];
+                    setSelectedImage(mainImage.url);
+                } else if (data.imageUrl) {
+                    setSelectedImage(data.imageUrl);
+                }
             } catch (err) {
                 console.error('Error fetching product details:', err);
                 setError(err.message || 'Erreur lors du chargement du produit');
@@ -42,6 +50,10 @@ export default function ProductDetail() {
 
         fetchProductDetails();
     }, [productId]);
+
+    const handleThumbnailClick = (imageUrl) => {
+        setSelectedImage(imageUrl);
+    };
 
     /**
      * Gère l'ajout du produit au panier.
@@ -105,16 +117,33 @@ export default function ProductDetail() {
 
             <div className="product-detail-content">
                 {/* Colonne gauche avec l'image */}
-                <div className="product-detail-image">
-                    {product.imageUrl ? (
-                        <img
-                            src={product.imageUrl}
-                            alt={product.name}
-                            className="product-large-image"
-                        />
-                    ) : (
-                        <div className="no-image">
-                            Aucune image disponible
+                <div className="product-detail-image-container">
+                    <div className="product-detail-main-image">
+                        {selectedImage ? (
+                            <img
+                                src={selectedImage}
+                                alt={product.name}
+                                className="product-large-image"
+                            />
+                        ) : (
+                            <div className="no-image">
+                                Aucune image disponible
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Affichage des vignettes pour les autres images */}
+                    {product.images && product.images.length > 1 && (
+                        <div className="product-thumbnails">
+                            {product.images.map((image, index) => (
+                                <div
+                                    key={index}
+                                    className={`thumbnail ${selectedImage === image.url ? 'active' : ''}`}
+                                    onClick={() => handleThumbnailClick(image.url)}
+                                >
+                                    <img src={image.url} alt={`${product.name} - image ${index + 1}`} />
+                                </div>
+                            ))}
                         </div>
                     )}
                 </div>

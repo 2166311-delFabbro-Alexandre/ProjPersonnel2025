@@ -26,6 +26,13 @@ export default function ProductEditModal({ product, onSave, onCancel, loading })
     // États pour gérer les erreurs et le chargement de l'image
     const [error, setError] = useState('');
     const [uploadingImage, setUploadingImage] = useState(false);
+    const [productImages, setProductImages] = useState(
+        product.images && product.images.length > 0
+            ? product.images
+            : product.imageUrl
+                ? [{ url: product.imageUrl, isMain: true, order: 0 }]
+                : []
+    );
 
     // Fonction pour gérer les changements dans les champs du formulaire
     const handleInputChange = (e) => {
@@ -62,17 +69,37 @@ export default function ProductEditModal({ product, onSave, onCancel, loading })
 
     // Fonction pour gérer la soumission du formulaire d'édition
     const handleSubmit = (e) => {
-        // Empêche le rechargement de la page lors de la soumission du formulaire
         e.preventDefault();
 
-        // Vérifie que les champs obligatoires sont remplis
         if (!editedProduct.name || !editedProduct.price) {
             setError('Nom et prix sont obligatoires');
             return;
         }
 
-        // Lance la fonction de sauvegarde avec le produit édité
-        onSave(editedProduct);
+        if (productImages.length === 0) {
+            setError('Au moins une image est requise');
+            return;
+        }
+
+        // Ensure one image is marked as main
+        const hasMainImage = productImages.some(img => img.isMain);
+        if (!hasMainImage && productImages.length > 0) {
+            setProductImages(prev => [
+                { ...prev[0], isMain: true },
+                ...prev.slice(1)
+            ]);
+        }
+
+        // Include images in the edited product
+        const finalProduct = {
+            ...editedProduct,
+            images: productImages
+        };
+
+        // Remove imageUrl field entirely
+        delete finalProduct.imageUrl;
+
+        onSave(finalProduct);
     };
 
     /**

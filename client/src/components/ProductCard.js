@@ -72,9 +72,15 @@ export default function ProductCard({ product, onEdit, onDelete, isAdmin = false
         <Link to={`/product/${product._id}`} className="product-card-link">
             <div className="product-card">
                 {/* Affiche l'image du produit si disponible */}
-                {product.imageUrl && (
+                {product.images && product.images.length > 0 ? (
+                    <img
+                        src={product.images.find(img => img.isMain)?.url || product.images[0].url}
+                        alt={product.name}
+                    />
+                ) : product.imageUrl ? (
                     <img src={product.imageUrl} alt={product.name} />
-                )}
+                ) : null}
+
                 {/* Affiche le nom, le prix et la disponibilité du produit */}
                 <h4>{product.name}</h4>
                 <p className="price">{product.price.toFixed(2)} $</p>

@@ -39,6 +39,14 @@ export default function AdminProducts() {
         stockQuantity: null,
         unlimitedStock: false
     });
+    // État pour gérer le téléchargement de plusieurs fichiers
+    const [multipleFiles, setMultipleFiles] = useState([]);
+    // État pour gérer l'aperçu des fichiers multiples
+    const [multiplePreviewUrls, setMultiplePreviewUrls] = useState([]);
+    // État pour gérer le statut de téléchargement multiple
+    const [uploadingMultiple, setUploadingMultiple] = useState(false);
+    // État pour stocker les images de produit
+    const [productImages, setProductImages] = useState([]);
 
     // Hook pour récupérer la liste des produits au chargement du composant
     useEffect(() => {
@@ -64,59 +72,47 @@ export default function AdminProducts() {
         }
     };
 
-    /**
-     * Gère le changement de fichier pour le téléchargement d'images.
-     * Met à jour l'aperçu de l'image et le fichier sélectionné.
-     * @param {*} e - L'événement de changement de fichier.
-     */
-    const handleFileChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setSelectedFile(file);
+    const handleMultipleFilesChange = (e) => {
+        const files = Array.from(e.target.files);
+        if (files.length === 0) return;
 
-            // Créer un aperçu de l'image sélectionnée
+        setMultipleFiles(files);
+
+        // Create previews for all selected files
+        const newPreviewUrls = [];
+
+        files.forEach(file => {
             const fileReader = new FileReader();
-            // Utiliser FileReader pour lire le fichier et mettre à jour l'URL de prévisualisation
             fileReader.onload = () => {
-                setPreviewUrl(fileReader.result);
+                newPreviewUrls.push(fileReader.result);
+                if (newPreviewUrls.length === files.length) {
+                    setMultiplePreviewUrls(newPreviewUrls);
+                }
             };
-            // Lire le fichier comme une URL de données
-            // Cela permet d'afficher un aperçu de l'image avant le téléchargement
             fileReader.readAsDataURL(file);
-        }
+        });
     };
 
-    /**
-     * Gère le téléchargement de l'image sélectionnée vers Cloudinary.
-     * Envoie le fichier à l'API de téléchargement et met à jour l'URL de l'image dans le formulaire du produit.
-     * @param {*} e - L'événement de soumission du formulaire.
-     */
-    const handleUpload = async (e) => {
+    // Add a function to upload multiple images
+    const handleUploadMultiple = async (e) => {
         e.preventDefault();
 
-        // Vérifie si un fichier a été sélectionné
-        // Si aucun fichier n'est sélectionné, change le statut du téléchargement
-        if (!selectedFile) {
-            setUploadStatus('Veuillez sélectionner une image');
+        if (multipleFiles.length === 0) {
+            setUploadStatus('Veuillez sélectionner des images');
             return;
         }
 
-        // Met à jour le statut du téléchargement et active le chargement
-        setUploadStatus('Téléchargement en cours...');
-        setLoading(true);
+        setUploadStatus('Téléchargement des images en cours...');
+        setUploadingMultiple(true);
 
         try {
-            // Instancie un objet FormData pour envoyer le fichier
             const formData = new FormData();
-            // Ajoute le fichier sélectionné et le dossier à FormData
-            formData.append('image', selectedFile);
-            formData.append('folder', 'products');
+            multipleFiles.forEach(file => {
+                formData.append('images', file);
+            });
 
-            // Récupère le token JWT de l'authentification admin
             const token = localStorage.getItem('adminToken');
-            // Envoie le fichier à l'API de téléchargement
-            // Utilise fetch pour envoyer une requête POST à l'API de téléchargement
-            const response = await fetch('/api/upload', {
+            const response = await fetch('/api/upload/multiple', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -124,29 +120,38 @@ export default function AdminProducts() {
                 body: formData
             });
 
-            // Vérifie si la réponse est correcte
-            // Si la réponse n'est pas correcte, lance une erreur
             if (!response.ok) {
-                throw new Error('Échec du téléchargement');
+                throw new Error('Échec du téléchargement des images');
             }
 
-            // Récupère les données de la réponse
-            // Si le téléchargement est réussi, met à jour le statut du téléchargement
             const data = await response.json();
-            setUploadStatus('Image téléchargée avec succès!');
+            setUploadStatus(`${data.images.length} images téléchargées avec succès!`);
 
-            // Insère l'URL de l'image dans le formulaire du produit
-            setProductForm({
-                ...productForm,
-                imageUrl: data.imageUrl
-            });
-            // Si une erreur se produit, met à jour le statut du téléchargement
-        } catch (err) {
-            setUploadStatus(`Erreur: ${err.message}`);
-            // Réinitialise l'état de chargement
+            // Add new images to the productImages state
+            setProductImages(prev => [...prev, ...data.images]);
+
+            // Reset multiple file selection
+            setMultipleFiles([]);
+            setMultiplePreviewUrls([]);
+        } catch (error) {
+            console.error('Error uploading multiple images:', error);
+            setUploadStatus(`Erreur: ${error.message}`);
         } finally {
-            setLoading(false);
+            setUploadingMultiple(false);
         }
+    };
+
+    const setMainImage = (index) => {
+        setProductImages(prev =>
+            prev.map((img, i) => ({
+                ...img,
+                isMain: i === index
+            }))
+        );
+    };
+
+    const removeImage = (index) => {
+        setProductImages(prev => prev.filter((_, i) => i !== index));
     };
 
     /**
@@ -210,12 +215,34 @@ export default function AdminProducts() {
             return;
         }
 
-        const productData = { ...productForm };
+        // Vérifie si au moins une image est fournie
+        if (productImages.length === 0) {
+            setError('Au moins une image est requise pour le produit');
+            return;
+        }
 
-        // Handle inventory edge cases
+        // Assure qu'il y a une image principale
+        const hasMainImage = productImages.some(img => img.isMain);
+        if (!hasMainImage) {
+            // Si aucune image n'est marquée comme principale, marque la première comme principale
+            setProductImages(prev => [
+                { ...prev[0], isMain: true },
+                ...prev.slice(1)
+            ]);
+        }
+
+        // Prépare les données du produit à envoyer
+        const productData = {
+            ...productForm,
+            images: productImages
+        };
+
+        delete productData.imageUrl;
+
+        // Gère la logique de stockage
         if (!productData.inStock) {
             productData.stockQuantity = null;
-            delete productData.unlimitedStock; // No need to send this to the server
+            delete productData.unlimitedStock;
         } else if (productData.isUnique) {
             productData.stockQuantity = 1;
             delete productData.unlimitedStock;
@@ -236,7 +263,7 @@ export default function AdminProducts() {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify(productForm)
+                body: JSON.stringify(productData)
             });
 
             // Vérifie si la réponse est correcte
@@ -255,12 +282,18 @@ export default function AdminProducts() {
                 description: '',
                 price: '',
                 imageUrl: '',
-                inStock: true
+                inStock: true,
+                isUnique: false,
+                stockQuantity: null,
+                unlimitedStock: false
             });
-            // Réinitialiser le fichier sélectionné, l'aperçu de l'image et le statut de téléchargement
+            // Réinitialiser le fichier sélectionné, l'aperçu de l'image, le statut de téléchargement, les images du produit et les fichiers multiples
             setSelectedFile(null);
             setPreviewUrl('');
             setUploadStatus('');
+            setProductImages([]);
+            setMultipleFiles([]);
+            setMultiplePreviewUrls([]);
             // Si la création de produit échoue, affiche une erreur
         } catch (err) {
             setError(err.message);
@@ -394,31 +427,66 @@ export default function AdminProducts() {
 
             {/* Section de téléchargement d'image */}
             <section className="upload-section">
-                <h3>Télécharger une Image</h3>
-                <form onSubmit={handleUpload} className="upload-form">
+                <h3>Images du produit</h3>
+                <form onSubmit={handleUploadMultiple} className="upload-form">
                     <div className="form-group">
-                        <label htmlFor="image">Sélectionner une image</label>
+                        <label htmlFor="product-images">Sélectionner une ou plusieurs images</label>
                         <input
                             type="file"
-                            id="image"
+                            id="product-images"
                             accept="image/*"
-                            onChange={handleFileChange}
-                            disabled={loading}
+                            multiple
+                            onChange={handleMultipleFilesChange}
+                            disabled={uploadingMultiple}
                         />
                     </div>
 
-                    {previewUrl && (
-                        <div className="image-preview">
-                            <img src={previewUrl} alt="Aperçu" width="200" />
+                    {multiplePreviewUrls.length > 0 && (
+                        <div className="multiple-image-preview">
+                            {multiplePreviewUrls.map((url, index) => (
+                                <div key={index} className="preview-image-container">
+                                    <img src={url} alt={`Aperçu ${index}`} className="preview-image" />
+                                </div>
+                            ))}
                         </div>
                     )}
 
-                    <button type="submit" disabled={!selectedFile || loading}>
-                        {loading ? 'Téléchargement...' : 'Télécharger'}
+                    <button type="submit" disabled={multipleFiles.length === 0 || uploadingMultiple}>
+                        {uploadingMultiple ? 'Téléchargement...' : 'Télécharger les images'}
                     </button>
 
                     {uploadStatus && <p className="upload-status">{uploadStatus}</p>}
                 </form>
+
+                {/* Image Gallery */}
+                {productImages.length > 0 && (
+                    <div className="product-images-gallery">
+                        <h4>Images sélectionnées pour ce produit</h4>
+                        <div className="images-grid">
+                            {productImages.map((img, index) => (
+                                <div key={index} className={`product-image-item ${img.isMain ? 'main-image' : ''}`}>
+                                    <img src={img.url} alt={`Produit ${index}`} />
+                                    <div className="image-actions">
+                                        <button
+                                            type="button"
+                                            className={`set-main-btn ${img.isMain ? 'active' : ''}`}
+                                            onClick={() => setMainImage(index)}
+                                        >
+                                            {img.isMain ? 'Image principale' : 'Définir comme principale'}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="remove-image-btn"
+                                            onClick={() => removeImage(index)}
+                                        >
+                                            Supprimer
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
             </section>
 
             {/* Formulaire de création de produit */}
@@ -465,7 +533,7 @@ export default function AdminProducts() {
                     </div>
 
                     {/* Champ de saisie pour l'URL de l'image */}
-                    <div className="form-group">
+                    {/* <div className="form-group">
                         <label htmlFor="imageUrl">URL de l'image</label>
                         <input
                             type="text"
@@ -476,7 +544,7 @@ export default function AdminProducts() {
                             readOnly
                         />
                         <p className="help-text">Téléchargez d'abord une image</p>
-                    </div>
+                    </div> */}
 
                     {/* Gestion de l'inventaire */}
                     <div className="inventory-management">
@@ -539,7 +607,7 @@ export default function AdminProducts() {
                     </div>
 
                     {/* Bouton de soumission pour créer le produit */}
-                    <button type="submit" disabled={loading || !productForm.imageUrl}>
+                    <button type="submit" disabled={loading || productImages.length === 0}>
                         {loading ? 'Création...' : 'Créer Produit'}
                     </button>
                 </form>
