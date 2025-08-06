@@ -1,5 +1,9 @@
 const mongoose = require('mongoose');
 
+/**
+ * Modèle de données pour les produits
+ * Utilisé pour stocker les informations des produits dans la base de données
+ */
 const productSchema = new mongoose.Schema({
   name: { type: String, required: true },
   description: String,

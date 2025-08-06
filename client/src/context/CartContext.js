@@ -149,7 +149,7 @@ export const CartProvider = ({ children }) => {
         }
 
         try {
-            // Get the current product data to ensure we have the latest stock info
+            // Vérifie la disponibilité du produit avant de mettre à jour la quantité
             const response = await fetch(`/api/products/${productId}`);
 
             if (!response.ok) {
@@ -158,13 +158,13 @@ export const CartProvider = ({ children }) => {
 
             const currentProduct = await response.json();
 
-            // For products with limited quantity
+            // Vérifie si le produit est en stock
             if (currentProduct.stockQuantity !== null) {
-                // If requested quantity exceeds available stock
+                // Si la quantité demandée dépasse le stock disponible
                 if (quantity > currentProduct.stockQuantity) {
                     alert(`Désolé, il ne reste que ${currentProduct.stockQuantity} exemplaire(s) en stock.`);
 
-                    // If there's stock available, update to the maximum
+                    // Si du stock est disponible, met à jour la quantité au maximum
                     if (currentProduct.stockQuantity > 0) {
                         setCartItems(prevItems =>
                             prevItems.map(item =>
@@ -174,14 +174,14 @@ export const CartProvider = ({ children }) => {
                             )
                         );
                     } else {
-                        // No stock available, remove from cart
+                        // Pas de stock disponible, supprime l'article du panier
                         removeFromCart(productId);
                     }
                     return;
                 }
             }
 
-            // If checks pass, update quantity
+            // Si la vérification passe, met à jour la quantité
             setCartItems(prevItems =>
                 prevItems.map(item =>
                     item._id === productId ? { ...item, quantity } : item

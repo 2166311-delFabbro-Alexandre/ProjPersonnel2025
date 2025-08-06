@@ -163,19 +163,20 @@ export default function Cart() {
                 })
             });
 
-            // Log the raw response for debugging
+            // Loggue la réponse brute du serveur
             const rawResponse = await response.text();
             console.log('Raw server response:', rawResponse);
 
-            // Parse the response
+            // Parse la réponse JSON
+            // Si la réponse n'est pas JSON, on renvoie un objet vide
             const data = rawResponse ? JSON.parse(rawResponse) : {};
 
-            // Check for errors
+            // Vérifie si la réponse est correcte
             if (!response.ok) {
                 throw new Error(data.message || 'Erreur lors de la création de la commande');
             }
 
-            // Clear cart and return data
+            // Nettoie le panier après la soumission de la commande
             clearCart();
             return data;
         } catch (error) {

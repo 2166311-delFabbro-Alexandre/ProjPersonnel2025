@@ -75,17 +75,19 @@ export default function ProductEditModal({ product, onSave, onCancel, loading })
     const handleSubmit = (e) => {
         e.preventDefault();
 
+        // Validation des champs nom et prix requis
         if (!editedProduct.name || !editedProduct.price) {
             setError('Nom et prix sont obligatoires');
             return;
         }
 
+        // Validation des images
         if (productImages.length === 0) {
             setError('Au moins une image est requise');
             return;
         }
 
-        // Ensure one image is marked as main
+        // Assure que l'image principale est définie
         const hasMainImage = productImages.some(img => img.isMain);
         if (!hasMainImage && productImages.length > 0) {
             setProductImages(prev => [
@@ -94,20 +96,21 @@ export default function ProductEditModal({ product, onSave, onCancel, loading })
             ]);
         }
 
-        // Include images in the edited product
+        // Inclus les images dans le produit édité
         const finalProduct = {
             ...editedProduct,
             images: productImages
         };
 
-        // Remove imageUrl field entirely
+        // Enlève l'ancienne imageUrl si elle existe
         delete finalProduct.imageUrl;
 
         onSave(finalProduct);
     };
 
     /**
-     * Handles uploading multiple images at once
+     * Gère le changement de fichiers multiples
+     * Met à jour l'état avec les fichiers sélectionnés et crée des prévisualisations
      */
     const handleMultipleFilesChange = (e) => {
         const files = Array.from(e.target.files);
@@ -115,9 +118,10 @@ export default function ProductEditModal({ product, onSave, onCancel, loading })
 
         setMultipleFiles(files);
 
-        // Create previews for all selected files
+        // Crée des prévisualisations des images sélectionnées
         const newPreviewUrls = [];
 
+        // Utilise FileReader pour lire les fichiers et créer des URLs de prévisualisation
         files.forEach(file => {
             const fileReader = new FileReader();
             fileReader.onload = () => {
@@ -131,11 +135,13 @@ export default function ProductEditModal({ product, onSave, onCancel, loading })
     };
 
     /**
-     * Uploads multiple images at once
+     * Télécharge plusieurs images vers le serveur
+     * Utilise FormData pour envoyer les fichiers sélectionnés
      */
     const handleUploadMultiple = async (e) => {
         e.preventDefault();
 
+        // Vérifie si des fichiers ont été sélectionnés
         if (multipleFiles.length === 0) {
             setError('Veuillez sélectionner des images');
             return;
@@ -164,10 +170,10 @@ export default function ProductEditModal({ product, onSave, onCancel, loading })
 
             const data = await response.json();
 
-            // Add new images to the productImages state
+            // Ajoute les nouvelles images au produit
             setProductImages(prev => [...prev, ...data.images]);
 
-            // Reset multiple file selection
+            // Réinitialise les fichiers et les prévisualisations
             setMultipleFiles([]);
             setMultiplePreviewUrls([]);
         } catch (error) {
@@ -178,7 +184,7 @@ export default function ProductEditModal({ product, onSave, onCancel, loading })
     };
 
     /**
-     * Sets an image as the main product image
+     * Définit une image comme l'image principale du produit
      */
     const setMainImage = (index) => {
         setProductImages(prev => {
@@ -194,7 +200,8 @@ export default function ProductEditModal({ product, onSave, onCancel, loading })
     };
 
     /**
-     * Removes an image from the product
+     * Supprime une image du produit
+     * Met à jour l'état des images du produit en filtrant l'image supprimée
      */
     const removeImage = (index) => {
         setProductImages(prev => prev.filter((_, i) => i !== index));
@@ -251,11 +258,11 @@ export default function ProductEditModal({ product, onSave, onCancel, loading })
                         />
                     </div>
 
-                    {/* Images management section */}
+                    {/* Gestion des images */}
                     <div className="form-group">
                         <label>Images du produit</label>
 
-                        {/* Current product images */}
+                        {/* Affiche les images actuelles du produit */}
                         {productImages.length > 0 && (
                             <div className="product-images-gallery">
                                 <h4>Images actuelles</h4>
@@ -285,7 +292,7 @@ export default function ProductEditModal({ product, onSave, onCancel, loading })
                             </div>
                         )}
 
-                        {/* Multiple images upload */}
+                        {/* Téléchargement d'images multiples */}
                         <div className="form-group">
                             <label htmlFor="edit-multiple-images">Ajouter plusieurs images</label>
                             <div className="multiple-upload">
