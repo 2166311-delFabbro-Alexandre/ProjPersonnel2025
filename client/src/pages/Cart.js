@@ -68,7 +68,9 @@ export default function Cart() {
         setVerificationError('');
 
         try {
+            console.log('Starting cart availability check for items:', cartItems);
             const result = await verifyCartAvailability();
+            console.log('Availability check result:', result);
 
             // Vérifie si le résultat est valide
             if (!result.valid) {

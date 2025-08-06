@@ -18,12 +18,8 @@ export default function AdminProducts() {
     const [error, setError] = useState('');
     // État pour stocker la liste des produits
     const [products, setProducts] = useState([]);
-    // État pour gérer le fichier sélectionné pour le téléchargement d'images
-    const [selectedFile, setSelectedFile] = useState(null);
     // État pour gérer le statut du téléchargement d'images
     const [uploadStatus, setUploadStatus] = useState('');
-    // État pour gérer l'URL de prévisualisation de l'image
-    const [previewUrl, setPreviewUrl] = useState('');
     // État pour gérer l'édition de produit
     const [isEditing, setIsEditing] = useState(false);
     // État pour gérer le produit en cours d'édition
@@ -287,9 +283,7 @@ export default function AdminProducts() {
                 stockQuantity: null,
                 unlimitedStock: false
             });
-            // Réinitialiser le fichier sélectionné, l'aperçu de l'image, le statut de téléchargement, les images du produit et les fichiers multiples
-            setSelectedFile(null);
-            setPreviewUrl('');
+            // Réinitialiser le statut de téléchargement, les images du produit et les fichiers multiples
             setUploadStatus('');
             setProductImages([]);
             setMultipleFiles([]);

@@ -122,3 +122,97 @@
   background-color: #ffebee;
   border-radius: 4px;
 }
+
+.product-images-gallery {
+  margin: 15px 0;
+}
+
+.images-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 15px;
+  margin-top: 10px;
+}
+
+.product-image-item {
+  position: relative;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  overflow: hidden;
+  height: 120px;
+}
+
+.main-image {
+  border: 3px solid #4CAF50;
+}
+
+.product-image-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.image-actions {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  padding: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  transform: translateY(100%);
+  transition: transform 0.3s ease;
+}
+
+.product-image-item:hover .image-actions {
+  transform: translateY(0);
+}
+
+.set-main-btn, .remove-image-btn {
+  padding: 5px;
+  font-size: 12px;
+  width: 100%;
+}
+
+.set-main-btn.active {
+  background-color: #2E7D32;
+  color: white;
+}
+
+.remove-image-btn {
+  background-color: #d32f2f;
+  color: white;
+}
+
+.multiple-upload {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.multiple-upload input[type="file"] {
+  flex-grow: 1;
+}
+
+.multiple-image-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 15px 0;
+}
+
+.preview-image-container {
+  width: 80px;
+  height: 80px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.preview-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}

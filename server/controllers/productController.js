@@ -1,6 +1,16 @@
 const Product = require('../models/Product');
 
 /**
+ * Contrôleur pour gérer les produits
+ * 
+ * @param {*} req 
+ * @param {*} res 
+ * 
+ * @author Alexandre del Fabbro
+ * Code inspiré de GitHub Copilot - Claude Sonnet 3.7 [Modèle massif de langage] - Version du 30 juillet 2025
+ */
+
+/**
  * Obtenir tous les produits
  */
 exports.getAllProducts = async (req, res) => {
@@ -36,7 +46,7 @@ exports.createProduct = async (req, res) => {
     try {
         const { name, description, price, images, inStock, isUnique, stockQuantity } = req.body;
 
-        // Validate that we have at least one image
+        // Validation des images
         if (!images || !Array.isArray(images) || images.length === 0) {
             return res.status(400).json({
                 success: false,
@@ -44,16 +54,17 @@ exports.createProduct = async (req, res) => {
             });
         }
 
-        // Process images
+        // Traiter les images 
         const processedImages = images.map((img, index) => ({
             url: img.url,
             isMain: img.isMain || (index === 0 && !images.some(i => i.isMain)),
             order: img.order || index
         }));
 
-        // Get the main image URL for backward compatibility
+        // Définir l'image principale
         const mainImage = processedImages.find(img => img.isMain) || processedImages[0];
 
+        // Créer le produit
         const newProduct = new Product({
             name,
             description,
@@ -83,23 +94,28 @@ exports.updateProduct = async (req, res) => {
     try {
         const { imageUrl, images, ...otherData } = req.body;
 
-        // Process images
+        // Traiter les données à mettre à jour
         let updateData = { ...otherData };
 
-        // If we have images array
+        // Traiter les images si fournies
         if (images && Array.isArray(images)) {
-            updateData.images = images.map((img, index) => ({
-                url: img.url,
-                isMain: img.isMain || (index === 0 && !imageUrl),
-                order: img.order || index
-            }));
+            const hasMainImage = images.some(img => img.isMain);
+
+            updateData.images = images.map((img, index) => {
+                const shouldBeMain = img.isMain || (!hasMainImage && index === 0);
+                return {
+                    url: img.url,
+                    isMain: shouldBeMain,
+                    order: img.order || index
+                };
+            });
         }
 
-        // If there's a single imageUrl, add it as a main image if no images exist
+        // Si une nouvelle imageUrl est fournie, la mettre à jour
         if (imageUrl) {
             updateData.imageUrl = imageUrl;
 
-            // If we don't have any images yet, create one from imageUrl
+            // Si aucune image n'est marquée comme principale, définir la nouvelle imageUrl comme principale
             if (!updateData.images || updateData.images.length === 0) {
                 updateData.images = [{
                     url: imageUrl,
@@ -109,12 +125,14 @@ exports.updateProduct = async (req, res) => {
             }
         }
 
+        // Mettre à jour le produit
         const updatedProduct = await Product.findByIdAndUpdate(
             req.params.id,
             updateData,
             { new: true, runValidators: true }
         );
 
+        // Si le produit n'existe pas retourner une erreur 404
         if (!updatedProduct) {
             return res.status(404).json({ error: 'Produit non trouvé' });
         }
@@ -164,7 +182,7 @@ exports.checkAvailability = async (req, res) => {
         // Récupère les produits correspondants aux IDs fournis
         const products = await Product.find({
             _id: { $in: productIds }
-        }).select('_id name price imageUrl inStock isUnique stockQuantity');
+        }).select('_id name price imageUrl images inStock isUnique stockQuantity');
 
         return res.status(200).json({
             success: true,

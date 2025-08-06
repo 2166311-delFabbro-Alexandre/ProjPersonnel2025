@@ -25,7 +25,6 @@ export default function ProductEditModal({ product, onSave, onCancel, loading })
     });
     // États pour gérer les erreurs et le chargement de l'image
     const [error, setError] = useState('');
-    const [uploadingImage, setUploadingImage] = useState(false);
     const [productImages, setProductImages] = useState(
         product.images && product.images.length > 0
             ? product.images
@@ -33,6 +32,11 @@ export default function ProductEditModal({ product, onSave, onCancel, loading })
                 ? [{ url: product.imageUrl, isMain: true, order: 0 }]
                 : []
     );
+
+    // États pour gérer les fichiers multiples et leurs prévisualisations
+    const [multipleFiles, setMultipleFiles] = useState([]);
+    const [multiplePreviewUrls, setMultiplePreviewUrls] = useState([]);
+    const [uploadingMultiple, setUploadingMultiple] = useState(false);
 
     // Fonction pour gérer les changements dans les champs du formulaire
     const handleInputChange = (e) => {
@@ -103,23 +107,50 @@ export default function ProductEditModal({ product, onSave, onCancel, loading })
     };
 
     /**
-     * Gère le téléchargement de l'image du produit.
-     * 
-     * @param {*} e - L'événement de changement du champ de fichier
-     * @returns 
+     * Handles uploading multiple images at once
      */
-    const handleImageUpload = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
+    const handleMultipleFilesChange = (e) => {
+        const files = Array.from(e.target.files);
+        if (files.length === 0) return;
 
-        setUploadingImage(true);
+        setMultipleFiles(files);
+
+        // Create previews for all selected files
+        const newPreviewUrls = [];
+
+        files.forEach(file => {
+            const fileReader = new FileReader();
+            fileReader.onload = () => {
+                newPreviewUrls.push(fileReader.result);
+                if (newPreviewUrls.length === files.length) {
+                    setMultiplePreviewUrls(newPreviewUrls);
+                }
+            };
+            fileReader.readAsDataURL(file);
+        });
+    };
+
+    /**
+     * Uploads multiple images at once
+     */
+    const handleUploadMultiple = async (e) => {
+        e.preventDefault();
+
+        if (multipleFiles.length === 0) {
+            setError('Veuillez sélectionner des images');
+            return;
+        }
+
+        setUploadingMultiple(true);
 
         try {
             const formData = new FormData();
-            formData.append('image', file);
+            multipleFiles.forEach(file => {
+                formData.append('images', file);
+            });
 
             const token = localStorage.getItem('adminToken');
-            const response = await fetch('/api/upload', {
+            const response = await fetch('/api/upload/multiple', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -128,20 +159,45 @@ export default function ProductEditModal({ product, onSave, onCancel, loading })
             });
 
             if (!response.ok) {
-                throw new Error('Échec du téléchargement');
+                throw new Error('Échec du téléchargement des images');
             }
 
             const data = await response.json();
 
-            setEditedProduct({
-                ...editedProduct,
-                imageUrl: data.imageUrl
-            });
-        } catch (err) {
-            setError('Erreur lors du téléchargement de l\'image: ' + err.message);
+            // Add new images to the productImages state
+            setProductImages(prev => [...prev, ...data.images]);
+
+            // Reset multiple file selection
+            setMultipleFiles([]);
+            setMultiplePreviewUrls([]);
+        } catch (error) {
+            setError('Erreur: ' + error.message);
         } finally {
-            setUploadingImage(false);
+            setUploadingMultiple(false);
         }
+    };
+
+    /**
+     * Sets an image as the main product image
+     */
+    const setMainImage = (index) => {
+        setProductImages(prev => {
+            const updatedImages = prev.map(img => ({
+                ...img,
+                isMain: false
+            }));
+            if (updatedImages[index]) {
+                updatedImages[index].isMain = true;
+            }
+            return updatedImages;
+        });
+    };
+
+    /**
+     * Removes an image from the product
+     */
+    const removeImage = (index) => {
+        setProductImages(prev => prev.filter((_, i) => i !== index));
     };
 
     return (
@@ -195,34 +251,71 @@ export default function ProductEditModal({ product, onSave, onCancel, loading })
                         />
                     </div>
 
-                    {/* Champ de saisie pour l'URL de l'image du produit */}
+                    {/* Images management section */}
                     <div className="form-group">
-                        <label htmlFor="edit-imageUrl">URL de l'image</label>
-                        <input
-                            type="text"
-                            id="edit-imageUrl"
-                            name="imageUrl"
-                            value={editedProduct.imageUrl || ''}
-                            onChange={handleInputChange}
-                        />
-                        {editedProduct.imageUrl && (
-                            <div className="image-preview">
-                                <img src={editedProduct.imageUrl} alt="Aperçu" />
+                        <label>Images du produit</label>
+
+                        {/* Current product images */}
+                        {productImages.length > 0 && (
+                            <div className="product-images-gallery">
+                                <h4>Images actuelles</h4>
+                                <div className="images-grid">
+                                    {productImages.map((img, index) => (
+                                        <div key={index} className={`product-image-item ${img.isMain ? 'main-image' : ''}`}>
+                                            <img src={img.url} alt={`Produit ${index}`} />
+                                            <div className="image-actions">
+                                                <button
+                                                    type="button"
+                                                    className={`set-main-btn ${img.isMain ? 'active' : ''}`}
+                                                    onClick={() => setMainImage(index)}
+                                                >
+                                                    {img.isMain ? 'Image principale' : 'Définir comme principale'}
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="remove-image-btn"
+                                                    onClick={() => removeImage(index)}
+                                                >
+                                                    Supprimer
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         )}
-                    </div>
 
-                    {/* Champ de téléchargement pour une nouvelle image */}
-                    <div className="form-group">
-                        <label htmlFor="edit-new-image">Télécharger une nouvelle image</label>
-                        <input
-                            type="file"
-                            id="edit-new-image"
-                            accept="image/*"
-                            onChange={handleImageUpload}
-                            disabled={uploadingImage || loading}
-                        />
-                        {uploadingImage && <p>Téléchargement en cours...</p>}
+                        {/* Multiple images upload */}
+                        <div className="form-group">
+                            <label htmlFor="edit-multiple-images">Ajouter plusieurs images</label>
+                            <div className="multiple-upload">
+                                <input
+                                    type="file"
+                                    id="edit-multiple-images"
+                                    accept="image/*"
+                                    multiple
+                                    onChange={handleMultipleFilesChange}
+                                    disabled={uploadingMultiple || loading}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={handleUploadMultiple}
+                                    disabled={multipleFiles.length === 0 || uploadingMultiple || loading}
+                                >
+                                    {uploadingMultiple ? 'Téléchargement...' : 'Télécharger'}
+                                </button>
+                            </div>
+
+                            {multiplePreviewUrls.length > 0 && (
+                                <div className="multiple-image-preview">
+                                    {multiplePreviewUrls.map((url, index) => (
+                                        <div key={index} className="preview-image-container">
+                                            <img src={url} alt={`Aperçu ${index}`} className="preview-image" />
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     {/* Gestion de l'inventaire */}
@@ -288,7 +381,10 @@ export default function ProductEditModal({ product, onSave, onCancel, loading })
                     {/* Actions de la modal d'édition */}
                     <div className="modal-actions">
                         {/* Bouton pour sauvegarder les modifications */}
-                        <button type="submit" disabled={loading || uploadingImage} className="save-button">
+                        <button type="submit"
+                            disabled={loading || uploadingMultiple}
+                            className="save-button"
+                        >
                             {loading ? 'Sauvegarde...' : 'Sauvegarder'}
                         </button>
                         {/* Bouton pour annuler les modifications */}
@@ -296,7 +392,7 @@ export default function ProductEditModal({ product, onSave, onCancel, loading })
                             type="button"
                             onClick={onCancel}
                             className="cancel-button"
-                            disabled={loading || uploadingImage}
+                            disabled={loading || uploadingMultiple}
                         >
                             Annuler
                         </button>
