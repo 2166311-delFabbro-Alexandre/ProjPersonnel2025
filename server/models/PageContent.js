@@ -1,5 +1,9 @@
 const mongoose = require('mongoose');
 
+/**
+ * Schéma pour le contenu des pages.
+ * Chaque document représente le contenu d'une page spécifique.
+ */
 const pageContentSchema = new mongoose.Schema({
     pageId: {
         type: String,

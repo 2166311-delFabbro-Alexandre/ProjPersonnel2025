@@ -68,13 +68,18 @@ export default function AdminProducts() {
         }
     };
 
+    /**
+     * Gère les changements dans le champ de sélection de fichiers multiples.
+     * 
+     * @param {*} e - L'événement de changement.
+     */
     const handleMultipleFilesChange = (e) => {
         const files = Array.from(e.target.files);
         if (files.length === 0) return;
 
         setMultipleFiles(files);
 
-        // Create previews for all selected files
+        // Crée des aperçus pour tous les fichiers sélectionnés
         const newPreviewUrls = [];
 
         files.forEach(file => {
@@ -89,25 +94,34 @@ export default function AdminProducts() {
         });
     };
 
-    // Add a function to upload multiple images
+    /**
+     * Gère le téléchargement de plusieurs images.
+     * 
+     * @param {*} e - L'événement de soumission.
+     */
     const handleUploadMultiple = async (e) => {
         e.preventDefault();
 
+        // Vérifie si des fichiers sont sélectionnés
         if (multipleFiles.length === 0) {
             setUploadStatus('Veuillez sélectionner des images');
             return;
         }
 
+        // Indique que le téléchargement est en cours
         setUploadStatus('Téléchargement des images en cours...');
         setUploadingMultiple(true);
 
         try {
+            // Prépare les données du formulaire
             const formData = new FormData();
             multipleFiles.forEach(file => {
                 formData.append('images', file);
             });
 
+            // Récupère le token d'authentification
             const token = localStorage.getItem('adminToken');
+            // Envoie la requête de téléchargement
             const response = await fetch('/api/upload/multiple', {
                 method: 'POST',
                 headers: {
@@ -116,17 +130,19 @@ export default function AdminProducts() {
                 body: formData
             });
 
+            // Vérifie si la réponse est correcte
             if (!response.ok) {
                 throw new Error('Échec du téléchargement des images');
             }
 
+            // Récupère les données de la réponse
             const data = await response.json();
             setUploadStatus(`${data.images.length} images téléchargées avec succès!`);
 
-            // Add new images to the productImages state
+            // Ajoute les nouvelles images à l'état productImages
             setProductImages(prev => [...prev, ...data.images]);
 
-            // Reset multiple file selection
+            // Réinitialise la sélection de plusieurs fichiers
             setMultipleFiles([]);
             setMultiplePreviewUrls([]);
         } catch (error) {
@@ -137,7 +153,13 @@ export default function AdminProducts() {
         }
     };
 
+    /**
+     * Définit l'image principale du produit.
+     * 
+     * @param {*} index - L'index de l'image à définir comme principale.
+     */
     const setMainImage = (index) => {
+        // Met à jour l'état des images du produit pour définir l'image principale
         setProductImages(prev =>
             prev.map((img, i) => ({
                 ...img,
@@ -146,7 +168,13 @@ export default function AdminProducts() {
         );
     };
 
+    /**
+     * Supprime une image du produit.
+     * 
+     * @param {*} index - L'index de l'image à supprimer.
+     */
     const removeImage = (index) => {
+        // Met à jour l'état des images du produit pour supprimer l'image spécifiée
         setProductImages(prev => prev.filter((_, i) => i !== index));
     };
 
@@ -160,35 +188,30 @@ export default function AdminProducts() {
         // Met à jour le formulaire de produit avec les nouvelles valeurs
         let updatedForm = { ...productForm };
 
-        // Handle checkbox inputs
+        // Gère les cases à cocher
         if (type === 'checkbox') {
             updatedForm[name] = checked;
 
-            // Handle special inventory logic
+            // Gère la logique d'inventaire
             if (name === 'inStock' && !checked) {
-                // If not in stock, disable all inventory options
+                // Si hors stock, réinitialise les autres options d'inventaire
                 updatedForm.isUnique = false;
                 updatedForm.unlimitedStock = false;
                 updatedForm.stockQuantity = null;
             } else if (name === 'isUnique' && checked) {
-                // If unique item, set quantity to 1 and disable unlimited
+                // Si article unique, définit la quantité à 1 et désactive l'option illimitée
                 updatedForm.stockQuantity = 1;
                 updatedForm.unlimitedStock = false;
             } else if (name === 'unlimitedStock' && checked) {
-                // If unlimited, clear quantity value
+                // Si illimité, réinitialise la valeur de quantité
                 updatedForm.stockQuantity = null;
                 updatedForm.isUnique = false;
             }
         } else {
-            // Handle regular inputs
+            // Gère les entrées régulières
             if (name === 'stockQuantity') {
-                // Convert to number or null
+                // Convertit en nombre ou null
                 updatedForm[name] = value === '' ? null : Number(value);
-
-                // If quantity is 1, suggest that it might be a unique item
-                if (Number(value) === 1 && !updatedForm.isUnique) {
-                    // Optional: add a UI hint that they might want to check "unique item"
-                }
             } else {
                 updatedForm[name] = value;
             }
@@ -236,12 +259,15 @@ export default function AdminProducts() {
         delete productData.imageUrl;
 
         // Gère la logique de stockage
+        // Si hors stock, réinitialise les autres options d'inventaire
         if (!productData.inStock) {
             productData.stockQuantity = null;
             delete productData.unlimitedStock;
+            // Si article unique, définit la quantité à 1 et désactive l'option illimitée
         } else if (productData.isUnique) {
             productData.stockQuantity = 1;
             delete productData.unlimitedStock;
+            // Si illimité, réinitialise la valeur de quantité
         } else if (productData.unlimitedStock) {
             productData.stockQuantity = null;
             delete productData.unlimitedStock;
@@ -452,7 +478,7 @@ export default function AdminProducts() {
                     {uploadStatus && <p className="upload-status">{uploadStatus}</p>}
                 </form>
 
-                {/* Image Gallery */}
+                {/* Galerie d'images */}
                 {productImages.length > 0 && (
                     <div className="product-images-gallery">
                         <h4>Images sélectionnées pour ce produit</h4>
@@ -525,20 +551,6 @@ export default function AdminProducts() {
                             required
                         />
                     </div>
-
-                    {/* Champ de saisie pour l'URL de l'image */}
-                    {/* <div className="form-group">
-                        <label htmlFor="imageUrl">URL de l'image</label>
-                        <input
-                            type="text"
-                            id="imageUrl"
-                            name="imageUrl"
-                            value={productForm.imageUrl}
-                            onChange={handleProductInputChange}
-                            readOnly
-                        />
-                        <p className="help-text">Téléchargez d'abord une image</p>
-                    </div> */}
 
                     {/* Gestion de l'inventaire */}
                     <div className="inventory-management">

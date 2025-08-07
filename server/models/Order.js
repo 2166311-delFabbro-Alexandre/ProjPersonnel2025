@@ -1,5 +1,9 @@
 const mongoose = require('mongoose');
 
+/**
+ * Schéma pour les articles d'une commande.
+ * Chaque article contient des informations sur le produit commandé.
+ */
 const orderItemSchema = new mongoose.Schema({
     productId: {
         type: mongoose.Schema.Types.ObjectId,
