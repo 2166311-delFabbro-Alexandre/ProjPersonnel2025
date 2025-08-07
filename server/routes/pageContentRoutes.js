@@ -3,10 +3,10 @@ const router = express.Router();
 const pageContentController = require('../controllers/pageContentController');
 const { authenticateToken } = require('../middleware/auth');
 
-// Public routes
+// Routes publiques
 router.get('/:pageId', pageContentController.getPageContent);
 
-// Admin routes
+// Routes administrateur
 router.put('/:pageId', authenticateToken, pageContentController.updatePageContent);
 
 module.exports = router;

@@ -3,10 +3,10 @@ const router = express.Router();
 const orderController = require('../controllers/orderController');
 const { authenticateToken } = require('../middleware/auth');
 
-// Public routes
+// Routes publiques
 router.post('/', orderController.createOrder);
 
-// Admin routes
+// Routes administrateur
 router.get('/', authenticateToken, orderController.getAllOrders);
 router.put('/:id/status', authenticateToken, orderController.updateOrderStatus);
 
